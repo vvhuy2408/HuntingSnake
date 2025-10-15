@@ -123,7 +123,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="control.cpp" />
+    <ClCompile Include="feature.cpp" />
+    <ClCompile Include="gameLogic.cpp" />
     <ClCompile Include="HuntingSnake.cpp" />
+    <ClCompile Include="state.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="control.h" />
+    <ClInclude Include="feature.h" />
+    <ClInclude Include="gameLogic.h" />
+    <ClInclude Include="globals.h" />
+    <ClInclude Include="thuvien.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
