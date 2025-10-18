@@ -3,10 +3,10 @@
 #define CONTROL_H
 #include "feature.h"
 
-void MoveRight();
-void MoveLeft();
-void MoveDown();
-void MoveUp();
-void ThreadFunc();
+void moveRight();
+void moveLeft();
+void moveDown();
+void moveUp();
+void threadFunc();
 
 #endif // CONTROL_H

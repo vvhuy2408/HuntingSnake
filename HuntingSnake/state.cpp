@@ -11,7 +11,7 @@ int   STATE = 1;
 char  MOVING = 'D';
 char  CHAR_LOCK = 'A';
 
-int   SPEED = 5;
+int   SPEED = 3;
 
 int   SCORE = 0;
 int   LEVEL = 1;
