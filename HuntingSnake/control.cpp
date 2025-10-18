@@ -1,13 +1,13 @@
-#include "control.h"
+﻿#include "control.h"
 
-void MoveRight() {
+void moveRight() {
     if (snake[SIZE_SNAKE - 1].x + 1 == WIDTH_CONSOLE) {
-        ProcessDead();
+        processDead();
     }
     else {
         if (snake[SIZE_SNAKE - 1].x + 1 == food[FOOD_INDEX].x &&
             snake[SIZE_SNAKE - 1].y == food[FOOD_INDEX].y) {
-            Eat();
+            onAte();
         }
 
         for (int i = 0; i < SIZE_SNAKE - 1; i++) {
@@ -18,14 +18,14 @@ void MoveRight() {
     }
 }
 
-void MoveLeft() {
+void moveLeft() {
     if (snake[SIZE_SNAKE - 1].x - 1 == 0) {
-        ProcessDead();
+        processDead();
     }
     else {
         if (snake[SIZE_SNAKE - 1].x - 1 == food[FOOD_INDEX].x &&
             snake[SIZE_SNAKE - 1].y == food[FOOD_INDEX].y) {
-            Eat();
+            onAte();
         }
 
         for (int i = 0; i < SIZE_SNAKE - 1; i++) {
@@ -36,14 +36,14 @@ void MoveLeft() {
     }
 }
 
-void MoveDown() {
+void moveDown() {
     if (snake[SIZE_SNAKE - 1].y + 1 == HEIGHT_CONSOLE) {
-        ProcessDead();
+        processDead();
     }
     else {
         if (snake[SIZE_SNAKE - 1].x == food[FOOD_INDEX].x &&
             snake[SIZE_SNAKE - 1].y + 1 == food[FOOD_INDEX].y) {
-            Eat();
+            onAte();
         }
 
         for (int i = 0; i < SIZE_SNAKE - 1; i++) {
@@ -54,14 +54,14 @@ void MoveDown() {
     }
 }
 
-void MoveUp() {
+void moveUp() {
     if (snake[SIZE_SNAKE - 1].y - 1 == 0) {
-        ProcessDead();
+        processDead();
     }
     else {
         if (snake[SIZE_SNAKE - 1].x == food[FOOD_INDEX].x &&
             snake[SIZE_SNAKE - 1].y - 1 == food[FOOD_INDEX].y) {
-            Eat();
+            onAte();
         }
 
         for (int i = 0; i < SIZE_SNAKE - 1; i++) {
@@ -73,30 +73,31 @@ void MoveUp() {
     }
 }
 
-void ThreadFunc() {
-    while (1) {
-        if (STATE == 1) { // If my snake is alive
-            DrawSnakeAndFood(" ");
-
-            switch (MOVING) {
-            case 'A':
-                MoveLeft();
-                break;
-            case 'D':
-                MoveRight();
-                break;
-            case 'W':
-                MoveUp();
-                break;
-            case 'S':
-                MoveDown();
-                break;
+void threadFunc() {
+    while (true) {
+        if (STATE == 1) { // Snake đang sống
+            // Xóa rắn cũ bằng khoảng trắng
+            for (int i = 0; i < SIZE_SNAKE; ++i) {
+                gotoXY(snake[i].x, snake[i].y);
+                printf(" ");
             }
 
-            DrawSnakeAndFood("O");
+            // Di chuyển theo hướng hiện tại
+            switch (MOVING) {
+            case 'A': moveLeft();  break;
+            case 'D': moveRight(); break;
+            case 'W': moveUp();    break;
+            case 'S': moveDown();  break;
+            }
+
+            // Vẽ lại mồi và rắn mới
+            drawFood();
+            drawSnake();
         }
 
-        Sleep(1000 / SPEED); // Sleep function with SPEED variable
+        // delay theo tốc độ
+        Sleep(1000 / SPEED);
     }
 }
+
 
