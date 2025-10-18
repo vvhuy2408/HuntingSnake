@@ -4,8 +4,8 @@
 // ==== Config ====
 #define MAX_SIZE_SNAKE    128
 #define MAX_SIZE_FOOD     4
-#define BASE_LENGTH       7               // MSSV 1 người
-#define MAX_SNAKE_LENGTH  35              // MSSV 5 người
+#define BASE_LENGTH       8               // MSSV 1 người
+#define MAX_SNAKE_LENGTH  40              // MSSV 5 người
 #define MIN_SPEED         1
 #define MAX_SPEED         20
 #define MAX_WALLS         1024
@@ -30,7 +30,7 @@ extern int   GATE_ACTIVE;
 extern POINT GATE_POS;
 
 // ==== Loại food ====
-enum { FOOD_NORMAL = 0, FOOD_POISON = 1, FOOD_BIG = 2 };
+enum { FOOD_NORMAL = 0, FOOD_POISON = 2, FOOD_BIG = 1 };
 extern int FOOD_TYPE[MAX_SIZE_FOOD];      // loại của food[FOOD_INDEX]
 extern int FOOD_VALUE[MAX_SIZE_FOOD];     // +2 / -2 / +6
 
