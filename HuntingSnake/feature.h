@@ -4,12 +4,17 @@
 
 #include "gameLogic.h"
 using namespace std;
-void StartGame();
-void ExitGame(HANDLE t);
-void PauseGame(HANDLE t);
-void DrawBoard(int x, int y, int width, int height, int curPosX = 0, int curPosY = 0);
-void Eat();
-void ProcessDead();
-void DrawSnakeAndFood(const char* str);
+void fixConsoleWindow();
+
+void startGame();
+void exitGame(HANDLE t);
+void pauseGame(HANDLE t);
+
+void drawBoard(int x, int y, int width, int height, int curPosX = 0, int curPosY = 0);
+void drawSnake();
+void drawFood();
+
+void processDead();
+
 
 #endif // FEATURE_H

@@ -5,16 +5,20 @@
 #include <windows.h>
 #include <time.h>
 #include "thuvien.h"
-#define MAX_SIZE_SNAKE 10
-#define MAX_SIZE_FOOD 4
-#define MAX_SPEED 3
 
-
-void FixConsoleWindow();
 void gotoXY(int x, int y);
-bool IsValid(int x, int y);
-void GenerateFood();
-void ResetData();
+bool isSnakeBody(int x, int y);
+int isWall(int x, int y);
+int levelTargetPoints(int lv);
+
+void maybeOpenGate();
+void onEnterGate();
+
+void generateFood();
+void onAte();
+
+void loadLevel(int lv);
+void resetData();
 
 
 #endif // GAME_LOGIC_H
