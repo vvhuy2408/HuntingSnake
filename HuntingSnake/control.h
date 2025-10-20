@@ -3,10 +3,10 @@
 #define CONTROL_H
 #include "feature.h"
 
-void moveRight();
-void moveLeft();
-void moveDown();
-void moveUp();
+void growSnake(POINT nextHead);
+void moveSnake(int dx, int dy);
 void threadFunc();
+int StepOnce(int dx, int dy);
+
 
 #endif // CONTROL_H
