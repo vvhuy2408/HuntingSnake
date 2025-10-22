@@ -7,6 +7,22 @@ void fixConsoleWindow() {
     SetWindowLong(consoleWindow, GWL_STYLE, style);
 }
 
+void HideConsoleCursor() {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cci;
+    GetConsoleCursorInfo(hOut, &cci);
+    cci.bVisible = FALSE;      // ẩn
+    SetConsoleCursorInfo(hOut, &cci);
+}
+
+void ShowConsoleCursor() {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cci;
+    GetConsoleCursorInfo(hOut, &cci);
+    cci.bVisible = TRUE;       // hiện lại
+    SetConsoleCursorInfo(hOut, &cci);
+}
+
 void startGame() {
     system("cls");
     srand((unsigned)time(NULL));          
@@ -53,6 +69,46 @@ void drawBoard(int x, int y, int width, int height, int curPosX, int curPosY) {
 
     gotoXY(curPosX, curPosY);
 }
+
+void drawGate() {
+    if (!GATE_ACTIVE) return;
+
+    int x = GATE_POS.x;
+    int y = GATE_POS.y;
+    GATE_SIZE = 0;
+
+    // trên cùng (3 ô)
+    GATE[GATE_SIZE++] = { x - 1, y - 1 };
+    GATE[GATE_SIZE++] = { x,     y - 1 };
+    GATE[GATE_SIZE++] = { x + 1, y - 1 };
+
+    // dưới (2 ô)
+    GATE[GATE_SIZE++] = { x - 1, y };
+    GATE[GATE_SIZE++] = { x + 1, y };
+
+    // in ra màn hình
+    for (int i = 0; i < GATE_SIZE; i++) {
+        gotoXY(GATE[i].x, GATE[i].y);
+        printf("@");  // ký tự thể hiện cổng
+    }
+}
+
+
+void eraseGate() {
+    int x = GATE_POS.x;
+    int y = GATE_POS.y;
+
+    for (int dy = -1; dy <= 0; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            if (!(dy == 0 && dx == 0)) { // bỏ điểm giữa nếu bạn muốn rỗng
+                gotoXY(x + dx, y + dy);
+                printf(" ");
+            }
+        }
+    }
+    GATE_SIZE = 0;
+}
+
 
 void processDead() {
     STATE = 0;

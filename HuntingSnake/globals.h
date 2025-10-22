@@ -7,8 +7,9 @@
 #define BASE_LENGTH       8               // MSSV 1 người
 #define MAX_SNAKE_LENGTH  40              // MSSV 5 người
 #define MIN_SPEED         1
-#define MAX_SPEED         20
+#define MAX_SPEED         6
 #define MAX_WALLS         1024
+#define MAX_GATE_SIZE    5
 
 // ==== Trạng thái bàn/rắn ====
 extern POINT snake[MAX_SIZE_SNAKE];
@@ -28,6 +29,8 @@ extern int SCORE, LEVEL, LEVEL_PROGRESS, LEVEL_TARGET;
 // ==== Cổng (gate) ====
 extern int   GATE_ACTIVE;
 extern POINT GATE_POS;
+extern POINT GATE[MAX_GATE_SIZE];
+extern int   GATE_SIZE;
 
 // ==== Loại food ====
 enum { FOOD_NORMAL = 0, FOOD_POISON = 2, FOOD_BIG = 1 };

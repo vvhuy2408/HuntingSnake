@@ -33,7 +33,7 @@ void threadFunc() {
 			else if (r == -1) processDead();
 
             drawSnake();
-            drawFood();
+			if (!GATE_ACTIVE) drawFood();
 
             // delay theo tốc độ
             Sleep(1000 / SPEED);
@@ -59,6 +59,8 @@ int StepOnce(int dx, int dy) {
             return -1; // Dead
         }
     }
+    
+
     if (nextHead.x <= 0 || nextHead.x >= WIDTH_CONSOLE ||
         nextHead.y <= 0 || nextHead.y >= HEIGHT_CONSOLE) {
         return -1; // Dead

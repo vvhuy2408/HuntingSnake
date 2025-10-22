@@ -6,6 +6,8 @@
 void main() {
     int temp;
     fixConsoleWindow();
+    HideConsoleCursor();
+
     startGame();
 
     thread t1(threadFunc); // Create thread for snake
@@ -42,6 +44,7 @@ void main() {
                 startGame();
             else {
                 exitGame(handle_t1);
+                ShowConsoleCursor();
                 return;
             }
         }
