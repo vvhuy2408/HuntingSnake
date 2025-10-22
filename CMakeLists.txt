@@ -6,7 +6,9 @@ find_package(SFML 2.6 COMPONENTS system window graphics REQUIRED)
 
 add_executable(HuntingSnake 
             main.cpp
-            Design/textureManager.cpp)
+            Design/effects.cpp
+            Design/textureManager.cpp
+            Design/interface.cpp)
 
 target_link_libraries(HuntingSnake PRIVATE sfml-system sfml-window sfml-graphics)
 target_include_directories(HuntingSnake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Design)
