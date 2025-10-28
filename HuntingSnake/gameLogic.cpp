@@ -60,15 +60,18 @@ void maybeOpenGate() {
 }
 
 void onEnterGate() {
-	if (!GATE_ACTIVE) return;
-	GATE_ACTIVE = 0;
 	eraseGate();
-
-	if (SPEED < MAX_SPEED) ++SPEED;
-	else SIZE_SNAKE = BASE_LENGTH; // đang max speed → reset length về 7 (theo luật bạn đặt)
+	// Tăng tốc độ hoặc reset length nếu đã max speed
+	if (SPEED < MAX_SPEED) {
+		++SPEED;
+	}
+	else {
+		// Đã max speed → reset length về BASE_LENGTH
+		SIZE_SNAKE = BASE_LENGTH;
+		resetSnakePosition(); // Đặt lại vị trí rắn
+	}
 
 	loadLevel(LEVEL + 1);
-	// vẽ sẽ do Feature gọi RenderAll() sau LoadLevel
 }
 
 
@@ -128,6 +131,7 @@ void loadLevel(int lv) {
 	LEVEL_PROGRESS = 0;
 	LEVEL_TARGET = levelTargetPoints(lv);
 	GATE_ACTIVE = 0; GATE_POS = { 0,0 };
+	IS_PASSING_GATE = 0;
 
 	system("cls");
 	drawBoard(0, 0, WIDTH_CONSOLE, HEIGHT_CONSOLE);
@@ -143,6 +147,7 @@ void resetData() {
 	MOVING = 'D';
 	SPEED = 3;                 // hoặc 5 nếu bạn muốn nhanh hơn
 	SCORE = 0;
+	IS_PASSING_GATE = 0;
 
 	// Kích thước bàn
 	WIDTH_CONSOLE = 70;
@@ -153,8 +158,14 @@ void resetData() {
 
 	resetSnakePosition();
 
+	// Đánh dấu tất cả đốt đều hiển thị
+	for (int i = 0; i < MAX_SIZE_SNAKE; i++) {
+		SNAKE_VISIBLE[i] = true;
+	}
+
 	// Chỉ số mồi hiện tại
 	FOOD_INDEX = 0;
+
 
 }
 

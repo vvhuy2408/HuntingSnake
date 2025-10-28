@@ -19,6 +19,7 @@ extern int   FOOD_INDEX;
 extern int   WIDTH_CONSOLE, HEIGHT_CONSOLE;
 extern int   STATE;                       // 1=Playing, 0=Pause/Over
 extern char  MOVING, CHAR_LOCK;
+extern bool SNAKE_VISIBLE[MAX_SIZE_SNAKE];
 
 // ==== Tốc độ ====
 extern int SPEED;
@@ -31,6 +32,8 @@ extern int   GATE_ACTIVE;
 extern POINT GATE_POS;
 extern POINT GATE[MAX_GATE_SIZE];
 extern int   GATE_SIZE;
+extern int   IS_PASSING_GATE;
+extern int   PASSING_JUST_STARTED;
 
 // ==== Loại food ====
 enum { FOOD_NORMAL = 0, FOOD_POISON = 2, FOOD_BIG = 1 };
