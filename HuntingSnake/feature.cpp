@@ -121,6 +121,9 @@ void drawSnake() {
     int L = (int)strlen(MSSV_SEQ);
 
     for (int i = 0; i < SIZE_SNAKE; ++i) {
+        // BỎ QUA đốt đã qua cổng
+        if (!SNAKE_VISIBLE[i]) continue;
+
         // khoảng cách từ đầu về đốt hiện tại
         int idx = (SIZE_SNAKE - 1 - i) % L;   // i = SIZE_SNAKE-1 (đầu) -> idx = 0
         char c = MSSV_SEQ[idx];
