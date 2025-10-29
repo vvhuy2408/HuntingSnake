@@ -2,14 +2,25 @@ cmake_minimum_required(VERSION 3.10)
 project(HuntingSnake)
 
 set(CMAKE_CXX_STANDARD 17)
-find_package(SFML 2.6 COMPONENTS system window graphics REQUIRED)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(HuntingSnake 
-            main.cpp
-            Design/effects.cpp
-            Design/textureManager.cpp
-            Design/interface.cpp
-            Design/screenState.cpp)
+# Tell CMake to use local SFML (the one you copied into your repo)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-target_link_libraries(HuntingSnake PRIVATE sfml-system sfml-window sfml-graphics sfml-audio)
+add_executable(HuntingSnake
+    main.cpp
+    Design/effects.cpp
+    Design/textureManager.cpp
+    Design/interface.cpp
+    Design/screenState.cpp
+)
+
 target_include_directories(HuntingSnake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Design)
+
+target_link_libraries(HuntingSnake
+    sfml-graphics
+    sfml-window
+    sfml-system
+    sfml-audio
+)
