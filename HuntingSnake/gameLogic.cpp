@@ -22,6 +22,23 @@ int isWall(int x, int y) {
 	return 0;
 }
 
+bool isGate(int x, int y) {
+	if (!GATE_ACTIVE) return false;
+
+	for (int i = 0; i < GATE_SIZE; i++) {
+		if (GATE[i].x == x && GATE[i].y == y)
+			return true;
+	}
+	return false;
+}
+
+void resetSnakePosition() {
+	int startX = 16, startY = 5;   // đầu ở (16,5)
+	for (int i = 0; i < SIZE_SNAKE; ++i) {
+		snake[i] = { startX - (SIZE_SNAKE - 1 - i), startY };
+	}
+}
+
 int levelTargetPoints(int lv) {
 	if (lv == 1) return 10;    
 	if (lv == 2) return 14;    
@@ -39,17 +56,22 @@ void maybeOpenGate() {
 		y = 1 + rand() % (HEIGHT_CONSOLE - 1);
 	} while (isSnakeBody(x, y) || isWall(x, y));
 	GATE_POS = { x,y };
+	drawGate();
 }
 
 void onEnterGate() {
-	if (!GATE_ACTIVE) return;
-	GATE_ACTIVE = 0;
+	eraseGate();
+	// Tăng tốc độ hoặc reset length nếu đã max speed
+	if (SPEED < MAX_SPEED) {
+		++SPEED;
+	}
+	else {
+		// Đã max speed → reset length về BASE_LENGTH
+		SIZE_SNAKE = BASE_LENGTH;
+		resetSnakePosition(); // Đặt lại vị trí rắn
+	}
 
-	if (SPEED < MAX_SPEED) ++SPEED;
-	else SIZE_SNAKE = BASE_LENGTH; // đang max speed → reset length về 7 (theo luật bạn đặt)
-
-	//LoadLevel(LEVEL + 1);
-	// vẽ sẽ do Feature gọi RenderAll() sau LoadLevel
+	loadLevel(LEVEL + 1);
 }
 
 
@@ -64,40 +86,37 @@ void generateFood() {
 
 	int r = rand() % 100;
 	if (LEVEL < 3) {
-		FOOD_TYPE[FOOD_INDEX] = (r < 80) ? FOOD_NORMAL : FOOD_POISON;
+		FOOD_TYPE[FOOD_INDEX] = (r < 90) ? FOOD_NORMAL : FOOD_POISON;
+	}
+	else if (LEVEL == 3) {
+		if (r < 70) FOOD_TYPE[FOOD_INDEX] = FOOD_NORMAL;
+		else if (r < 90) FOOD_TYPE[FOOD_INDEX] = FOOD_BIG;
+		else FOOD_TYPE[FOOD_INDEX] = FOOD_POISON;
 	}
 	else {
-		if (r < 70) FOOD_TYPE[FOOD_INDEX] = FOOD_NORMAL;
-		else if (r < 85) FOOD_TYPE[FOOD_INDEX] = FOOD_POISON;
-		else FOOD_TYPE[FOOD_INDEX] = FOOD_BIG;
+		if (r < 65) FOOD_TYPE[FOOD_INDEX] = FOOD_NORMAL;
+		else if (r < 90) FOOD_TYPE[FOOD_INDEX] = FOOD_BIG;
+		else FOOD_TYPE[FOOD_INDEX] = FOOD_POISON;
 	}
 	FOOD_VALUE[FOOD_INDEX] = (FOOD_TYPE[FOOD_INDEX] == FOOD_NORMAL ? 2 :
 		FOOD_TYPE[FOOD_INDEX] == FOOD_BIG ? 6 : -2);
 }
 
 void onAte() {
-	// 1Cập nhật điểm và tiến độ level
 	int value = FOOD_VALUE[FOOD_INDEX];
 	SCORE += value;
 	LEVEL_PROGRESS += value;
+	if (LEVEL_PROGRESS < 0) LEVEL_PROGRESS = 0;
 
-	// Không để tiến độ âm (nếu ăn mồi độc)
-	if (LEVEL_PROGRESS < 0)
-		LEVEL_PROGRESS = 0;
-
-	// 2Nếu chưa đủ điểm để mở cổng → sinh mồi mới
-	if (LEVEL_PROGRESS < LEVEL_TARGET) {
-		// chuyển sang food kế tiếp (vòng tròn)
-		FOOD_INDEX = (FOOD_INDEX + 1) % MAX_SIZE_FOOD;
-		generateFood();
+	if (LEVEL_PROGRESS >= LEVEL_TARGET) {
+		// đủ hoặc vượt mục tiêu -> mở cổng
+		LEVEL_PROGRESS = LEVEL_TARGET;          // clamp
+		if (!GATE_ACTIVE) maybeOpenGate();      // tránh mở nhiều lần
 	}
-
-	if (LEVEL_PROGRESS > LEVEL_TARGET) 
-		LEVEL_PROGRESS = LEVEL_TARGET;
-
-	// Nếu đã đủ điểm → mở cổng
 	else {
-		maybeOpenGate();
+		// chưa đủ -> sinh mồi mới
+		FOOD_INDEX = (FOOD_INDEX + 1) % MAX_SIZE_FOOD;
+		generateFood(); // hoặc GenerateSingleFood()
 	}
 
 	gotoXY(0, HEIGHT_CONSOLE + 1);
@@ -106,12 +125,17 @@ void onAte() {
 }
 
 
+
 void loadLevel(int lv) {
 	LEVEL = lv;
 	LEVEL_PROGRESS = 0;
 	LEVEL_TARGET = levelTargetPoints(lv);
 	GATE_ACTIVE = 0; GATE_POS = { 0,0 };
+	IS_PASSING_GATE = 0;
 
+	system("cls");
+	drawBoard(0, 0, WIDTH_CONSOLE, HEIGHT_CONSOLE);
+	resetSnakePosition();
 	//BuildWallsForLevel(lv);   // hoặc LoadLevelFromFile(lv)
 	FOOD_INDEX = 0;
 	generateFood();
@@ -122,6 +146,8 @@ void resetData() {
 	CHAR_LOCK = 'A';
 	MOVING = 'D';
 	SPEED = 3;                 // hoặc 5 nếu bạn muốn nhanh hơn
+	SCORE = 0;
+	IS_PASSING_GATE = 0;
 
 	// Kích thước bàn
 	WIDTH_CONSOLE = 70;
@@ -130,14 +156,16 @@ void resetData() {
 	// Độ dài ban đầu
 	SIZE_SNAKE = 8;
 
-	// Khởi tạo rắn 7 đốt nằm ngang, đầu ở snake[SIZE_SNAKE-1]
-	int startX = 16, startY = 5;   // đầu ở (16,5)
-	for (int i = 0; i < SIZE_SNAKE; ++i) {
-		snake[i] = { startX - (SIZE_SNAKE - 1 - i), startY };
+	resetSnakePosition();
+
+	// Đánh dấu tất cả đốt đều hiển thị
+	for (int i = 0; i < MAX_SIZE_SNAKE; i++) {
+		SNAKE_VISIBLE[i] = true;
 	}
 
 	// Chỉ số mồi hiện tại
 	FOOD_INDEX = 0;
+
 
 }
 
