@@ -41,7 +41,7 @@ int main()
     sf::Music backgroundMusic;
     if (!backgroundMusic.openFromFile("Design/Music/background.ogg"))
         std::cout << "Error loading background music!\n";
-    else
+    else 
     {
         backgroundMusic.setLoop(true);
         backgroundMusic.setVolume(60);
@@ -57,7 +57,7 @@ int main()
 
     // Font
     sf::Font font;
-    if (!font.loadFromFile("Design/Assets/Font/ThaleahFat.ttf"))
+    if (!font.loadFromFile("Design/Assets/Font/ThaleahFat.ttf")) 
     {
         std::cout << "Error loading font!\n";
     }
@@ -65,6 +65,7 @@ int main()
     // --- CONFIG CHO GAME LOOP ---
     sf::Clock gameClock;
     float timeAccumulator = 0; // Biến tích lũy thời gian
+
 
     // =================== MAIN LOOP ===================
     while (window.isOpen())
@@ -85,7 +86,7 @@ int main()
             if (!screenStack.empty() && screenStack.top() == ScreenState::InGame) {
                 if (event.type == sf::Event::KeyPressed) {
                     handleInput(event.key.code); // Hàm từ gameLogic.cpp
-                }
+        }
             }
         }
 
@@ -135,16 +136,16 @@ int main()
 
             if (howto_button.isClicked)
                 changeScreen(screenStack, ScreenState::HowTo);
-
+                
             if (about_button.isClicked)
                 changeScreen(screenStack, ScreenState::About);
-
+            
             // NÚT VÀO GAME
             if (heart_button.isClicked) {
                 startGame(); // Reset dữ liệu rắn trước khi vào
                 changeScreen(screenStack, ScreenState::InGame);
             }
-
+        
             if (loadgame_button.isClicked)
                 changeScreen(screenStack, ScreenState::LoadGame);
             break;
