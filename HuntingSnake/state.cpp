@@ -1,6 +1,6 @@
-#include "globals.h"
+﻿#include "globals.h"
 
-// ========== ??NH NGH?A BI?N ==========
+// ========== ĐỊNH NGHĨA BIẾN ==========
 POINT snake[MAX_SIZE_SNAKE];
 POINT food[MAX_SIZE_FOOD];
 
@@ -8,8 +8,8 @@ bool SNAKE_VISIBLE[MAX_SIZE_SNAKE];
 
 int   SIZE_SNAKE = BASE_LENGTH;
 int   FOOD_INDEX = 0;
-int   WIDTH_CONSOLE = 70, HEIGHT_CONSOLE = 20;
-int   STATE = 1;
+int   WIDTH_CONSOLE = 38, HEIGHT_CONSOLE = 20;
+int   STATE = 0;
 char  MOVING = 'D';
 char  CHAR_LOCK = 'A';
 
