@@ -7,7 +7,7 @@
 #include <vector>
 
 // Include file này để kết nối Logic và View
-// #include "HuntingSnake/globals.h"
+#include "HuntingSnake/globals.h"
 
 #include "Design/textureManager.hpp"
 #include "Design/effects.hpp"
