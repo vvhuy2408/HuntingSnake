@@ -4,6 +4,7 @@
 #include <SFML/System/Time.hpp>
 #include <stack>
 #include <iostream>
+#include <vector>
 
 #include "Design/textureManager.hpp"
 #include "Design/effects.hpp"
@@ -16,35 +17,66 @@ int main()
 
     // Backgrounds
     sf::Sprite start_game = loadInterface("Design/Assets/startgame.png", "start-game", window);
-    sf::Sprite main_menu  = loadInterface("Design/Assets/mainmenu.png", "main-menu", window);
-    sf::Sprite in_game    = loadInterface("Design/Assets/ingame.png", "in-game", window);
+    sf::Sprite main_menu = loadInterface("Design/Assets/mainmenu.png", "main-menu", window);
+    sf::Sprite in_game = loadInterface("Design/Assets/ingame.png", "in-game", window);
+    sf::Sprite about_us = loadInterface("Design/Assets/info.png", "about-us", window);
+    sf::Sprite load_game = loadInterface("Design/Assets/loadgame.png", "load-game", window);
 
     // Buttons
-    Button start_button    = createButton("Design/Assets/button/start.png", "", 640, 550);
-    Button soundOn_button  = createButton("Design/Assets/button/sound_on.png", "", 48, 48);
+    Button start_button = createButton("Design/Assets/button/start.png", "", 640, 550);
+    Button soundOn_button = createButton("Design/Assets/button/sound_on.png", "", 48, 48);
     Button soundOff_button = createButton("Design/Assets/button/sound_off.png", "", 48, 48);
-    Button back_button     = createButton("Design/Assets/button/arrow_left.png", "", 148, 48);
-    Button heart_button    = createButton("Design/Assets/button/heart_button.png", "", 500, 428);
+    Button back_button = createButton("Design/Assets/button/arrow_left.png", "", 148, 48);
+    Button heart_button = createButton("Design/Assets/button/heart_button.png", "", 500, 428);
     Button loadgame_button = createButton("Design/Assets/button/loadgame.png", "Design/Assets/button/loadgame_press.png", 980, 169);
-    Button howto_button    = createButton("Design/Assets/button/howto.png",   "Design/Assets/button/howto_press.png",   980, 369);
-    Button about_button    = createButton("Design/Assets/button/about.png",   "Design/Assets/button/about_press.png",   980, 569);
+    Button howto_button = createButton("Design/Assets/button/howto.png", "Design/Assets/button/howto_press.png", 980, 369);
+    Button about_button = createButton("Design/Assets/button/about.png", "Design/Assets/button/about_press.png", 980, 569);
+
+    std::vector<Button> slots;
+    float x_slot = 174, y_slot = 247;
+    for (int i = 0; i < 6; i++)
+    {
+        if (i % 2 != 0)
+        {
+            x_slot += 333;
+            Button slot = createButton("Design/Assets/button/slot.png", "", x_slot, y_slot);
+            slots.push_back(slot);
+            x_slot -= 333;
+        } 
+        
+        else if (i % 2 == 0)
+        {   
+            if (i != 0)
+                y_slot += 53;
+                
+            Button slot = createButton("Design/Assets/button/slot.png", "", x_slot, y_slot);
+            slots.push_back(slot);
+        }
+    }
+
+    std::vector<Button> rocks;
+    for (int i = 0; i < 3; i++)
+    {
+        Button rock = createButton("Design/Assets/button/rock.png", "", 48, 48);
+        rocks.push_back(rock);
+    }
 
     loadgame_button.hoverOffset = sf::Vector2f(35.f, 0.f);
-    howto_button.hoverOffset    = sf::Vector2f(35.f, 0.f);
-    about_button.hoverOffset    = sf::Vector2f(35.f, 0.f);
+    howto_button.hoverOffset = sf::Vector2f(35.f, 0.f);
+    about_button.hoverOffset = sf::Vector2f(35.f, 0.f);
 
     // Music
     sf::Music backgroundMusic;
     if (!backgroundMusic.openFromFile("Design/Music/background.ogg"))
         std::cout << "Error loading background music!\n";
-    else 
+    else
     {
         backgroundMusic.setLoop(true);
         backgroundMusic.setVolume(60);
         backgroundMusic.play();
     }
 
-    bool isExit   = false;
+    bool isExit = false;
     bool soundOff = false;
 
     // Initialize the screen stack once
@@ -53,7 +85,7 @@ int main()
 
     // Font
     sf::Font font;
-    if (!font.loadFromFile("Design/Assets/Font/ThaleahFat.ttf")) 
+    if (!font.loadFromFile("Design/Assets/Font/ThaleahFat.ttf"))
     {
         std::cout << "Error loading font!\n";
     }
@@ -61,7 +93,6 @@ int main()
     // Clock
     sf::Clock clock;
     sf::Time duration01 = sf::seconds(30); // input thời gian ở đây nhé
-
 
     // =================== MAIN LOOP ===================
     while (window.isOpen())
@@ -121,13 +152,13 @@ int main()
 
             if (howto_button.isClicked)
                 changeScreen(screenStack, ScreenState::HowTo);
-                
+
             if (about_button.isClicked)
                 changeScreen(screenStack, ScreenState::About);
-            
+
             if (heart_button.isClicked)
                 changeScreen(screenStack, ScreenState::InGame);
-        
+
             if (loadgame_button.isClicked)
                 changeScreen(screenStack, ScreenState::LoadGame);
             break;
@@ -142,6 +173,33 @@ int main()
 
             break;
 
+        case ScreenState::About:
+            window.draw(about_us);
+            updateButton(back_button, window);
+            drawButton(window, back_button);
+
+            if (back_button.isClicked)
+                goBack(screenStack);
+            break;
+        case ScreenState::LoadGame:
+            window.draw(load_game);
+
+            drawButton(window, back_button);
+
+            if (back_button.isClicked)
+                goBack(screenStack);
+
+            for (int i = 0; i < slots.size(); i++)
+            {
+                updateButton(slots[i], window);
+                drawButton(window, slots[i]);
+            }
+
+            updateButton(back_button, window);
+            drawButton(window, back_button);
+
+            break;
+
         default:
             break;
         }
@@ -151,7 +209,8 @@ int main()
         {
             updateButton(soundOff_button, window);
             drawButton(window, soundOff_button);
-            if (soundOff_button.isClicked) {
+            if (soundOff_button.isClicked)
+            {
                 soundOff = false;
                 backgroundMusic.play();
             }
@@ -160,7 +219,8 @@ int main()
         {
             updateButton(soundOn_button, window);
             drawButton(window, soundOn_button);
-            if (soundOn_button.isClicked) {
+            if (soundOn_button.isClicked)
+            {
                 soundOff = true;
                 backgroundMusic.pause();
             }
