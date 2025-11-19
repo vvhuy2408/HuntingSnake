@@ -9,7 +9,10 @@ add_executable(HuntingSnake
             Design/effects.cpp
             Design/textureManager.cpp
             Design/interface.cpp
-            Design/screenState.cpp)
+            Design/screenState.cpp
+            HuntingSnake/feature.cpp
+            HuntingSnake/gameLogic.cpp
+            HuntingSnake/state.cpp)
 
 target_link_libraries(HuntingSnake PRIVATE sfml-system sfml-window sfml-graphics sfml-audio)
 target_include_directories(HuntingSnake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Design)

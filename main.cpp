@@ -6,6 +6,9 @@
 #include <iostream>
 #include <vector>
 
+// Include file này để kết nối Logic và View
+#include "HuntingSnake/globals.h" 
+
 #include "Design/textureManager.hpp"
 #include "Design/effects.hpp"
 #include "Design/interface.hpp"
@@ -14,6 +17,7 @@
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Hunting Snake");
+    window.setFramerateLimit(60); // Giới hạn FPS để game mượt mà
 
     // Backgrounds
     sf::Sprite start_game = loadInterface("Design/Assets/startgame.png", "start-game", window);
@@ -26,6 +30,8 @@ int main()
     Button start_button = createButton("Design/Assets/button/start.png", "", 640, 550);
     Button soundOn_button = createButton("Design/Assets/button/sound_on.png", "", 48, 48);
     Button soundOff_button = createButton("Design/Assets/button/sound_off.png", "", 48, 48);
+    Button back_button = createButton("Design/Assets/button/arrow_left.png", "", 148, 48);
+    Button heart_button = createButton("Design/Assets/button/heart_button.png", "", 500, 428);
     Button back_button = createButton("Design/Assets/button/arrow_left.png", "", 148, 48);
     Button heart_button = createButton("Design/Assets/button/heart_button.png", "", 500, 428);
     Button loadgame_button = createButton("Design/Assets/button/loadgame.png", "Design/Assets/button/loadgame_press.png", 980, 169);
@@ -64,6 +70,8 @@ int main()
     loadgame_button.hoverOffset = sf::Vector2f(35.f, 0.f);
     howto_button.hoverOffset = sf::Vector2f(35.f, 0.f);
     about_button.hoverOffset = sf::Vector2f(35.f, 0.f);
+    howto_button.hoverOffset = sf::Vector2f(35.f, 0.f);
+    about_button.hoverOffset = sf::Vector2f(35.f, 0.f);
 
     // Music
     sf::Music backgroundMusic;
@@ -76,6 +84,7 @@ int main()
         backgroundMusic.play();
     }
 
+    bool isExit = false;
     bool isExit = false;
     bool soundOff = false;
 
@@ -90,13 +99,18 @@ int main()
         std::cout << "Error loading font!\n";
     }
 
-    // Clock
-    sf::Clock clock;
-    sf::Time duration01 = sf::seconds(30); // input thời gian ở đây nhé
+    // --- CONFIG CHO GAME LOOP ---
+    sf::Clock gameClock;
+    float timeAccumulator = 0; // Biến tích lũy thời gian
+
 
     // =================== MAIN LOOP ===================
     while (window.isOpen())
     {
+        // Tính thời gian trôi qua giữa các khung hình (delta time)
+        float dt = gameClock.restart().asSeconds();
+        timeAccumulator += dt;
+
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -104,6 +118,13 @@ int main()
                 isExit = true;
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
                 isExit = true;
+
+            // --- XỬ LÝ INPUT RẮN (Chỉ khi đang InGame) ---
+            if (!screenStack.empty() && screenStack.top() == ScreenState::InGame) {
+                if (event.type == sf::Event::KeyPressed) {
+                    handleInput(event.key.code); // Hàm từ gameLogic.cpp
+        }
+            }
         }
 
         if (isExit)
@@ -155,21 +176,38 @@ int main()
 
             if (about_button.isClicked)
                 changeScreen(screenStack, ScreenState::About);
-
-            if (heart_button.isClicked)
+            
+            // NÚT VÀO GAME
+            if (heart_button.isClicked) {
+                startGame(); // Reset dữ liệu rắn trước khi vào
                 changeScreen(screenStack, ScreenState::InGame);
-
+        
             if (loadgame_button.isClicked)
                 changeScreen(screenStack, ScreenState::LoadGame);
             break;
 
         case ScreenState::InGame:
+            // 1. Vẽ nền trước
             window.draw(in_game);
+
+            // 2. Cập nhật Logic game (Di chuyển rắn)
+            // Điều chỉnh tốc độ: Ví dụ SPEED=1 -> 0.5s/bước, SPEED=5 -> 0.1s/bước
+            if (timeAccumulator > 0.5f / (SPEED > 0 ? SPEED : 1)) {
+                timeAccumulator = 0;
+                updateGameLogic(); // Hàm từ gameLogic.cpp
+            }
+
+            // 3. Vẽ Rắn, Mồi, Cổng... đè lên nền
+            renderGame(window, font); // Hàm từ Feature.cpp (view)
+
+            // 4. Vẽ UI (Nút Back) đè lên cùng
             updateButton(back_button, window);
             drawButton(window, back_button);
 
-            if (back_button.isClicked)
+            if (back_button.isClicked) {
+                STATE = 0; // Dừng game
                 goBack(screenStack);
+            }
 
             break;
 
@@ -178,7 +216,8 @@ int main()
             updateButton(back_button, window);
             drawButton(window, back_button);
 
-            if (back_button.isClicked)
+            if (back_button.isClicked) {
+                STATE = 0; // Dừng game
                 goBack(screenStack);
             break;
         case ScreenState::LoadGame:
@@ -205,6 +244,7 @@ int main()
         }
 
         // =================== SOUND TOGGLE (GLOBAL) ===================
+        // Vẽ nút âm thanh ở góc (luôn hiển thị)
         if (soundOff)
         {
             updateButton(soundOff_button, window);
@@ -225,6 +265,33 @@ int main()
                 backgroundMusic.pause();
             }
         }
+
+        // --- BẮT ĐẦU CODE DEBUG TỌA ĐỘ ---
+
+        // 1. Lấy vị trí pixel của chuột
+        sf::Vector2i mousePixelPos = sf::Mouse::getPosition(window);
+
+        // 2. Chuyển đổi sang tọa độ grid (dùng công thức như Cách 1)
+        int gridX = (mousePixelPos.x - BOARD_X) / CELL_SIZE;
+        int gridY = (mousePixelPos.y - BOARD_Y) / CELL_SIZE;
+
+        // 3. Hiển thị lên màn hình
+        sf::Text debugText;
+        debugText.setFont(font);
+        debugText.setCharacterSize(20); // Tăng size chữ lên chút cho dễ đọc
+        debugText.setFillColor(sf::Color::Yellow); // Đổi sang màu vàng cho nổi
+        debugText.setOutlineThickness(2); // Viền đen cho chữ đỡ chìm
+        debugText.setOutlineColor(sf::Color::Black);
+
+        std::string coords = "(" + std::to_string(gridX) + ", " + std::to_string(gridY) + ")";
+        debugText.setString(coords);
+
+        // 4. Đặt vị trí: Dời sang phải 15px và xuống dưới 15px so với chuột
+        debugText.setPosition(mousePixelPos.x + 15, mousePixelPos.y + 15);
+
+        window.draw(debugText);
+
+        // --- KẾT THÚC CODE DEBUG ---
 
         window.display();
     }
