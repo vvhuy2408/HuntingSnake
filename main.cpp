@@ -21,6 +21,7 @@ int main()
     sf::Sprite in_game = loadInterface("Design/Assets/ingame.png", "in-game", window);
     sf::Sprite about_us = loadInterface("Design/Assets/info.png", "about-us", window);
     sf::Sprite load_game = loadInterface("Design/Assets/loadgame.png", "load-game", window);
+    sf::Sprite how_to = loadInterface("Design/Assets/howto.png", "how-to", window);
 
     // Buttons
     Button start_button = createButton("Design/Assets/button/start.png", "", 640, 550);
@@ -42,13 +43,13 @@ int main()
             Button slot = createButton("Design/Assets/button/slot.png", "", x_slot, y_slot);
             slots.push_back(slot);
             x_slot -= 333;
-        } 
-        
+        }
+
         else if (i % 2 == 0)
-        {   
+        {
             if (i != 0)
-                y_slot += 53;
-                
+                y_slot += 150;
+
             Button slot = createButton("Design/Assets/button/slot.png", "", x_slot, y_slot);
             slots.push_back(slot);
         }
@@ -57,7 +58,7 @@ int main()
     std::vector<Button> rocks;
     for (int i = 0; i < 3; i++)
     {
-        Button rock = createButton("Design/Assets/button/rock.png", "", 48, 48);
+        Button rock = createButton("Design/Assets/button/rock.png", "", (720 + 140 * i), 470);
         rocks.push_back(rock);
     }
 
@@ -78,6 +79,10 @@ int main()
 
     bool isExit = false;
     bool soundOff = false;
+    bool isDelete = false;
+    bool isSave = false;
+    bool isWin = false;
+    bool isLose = false;
 
     // Initialize the screen stack once
     std::stack<ScreenState> screenStack;
@@ -85,15 +90,34 @@ int main()
 
     // Font
     sf::Font font;
-    if (!font.loadFromFile("Design/Assets/Font/ThaleahFat.ttf"))
+    if (!font.loadFromFile("Design/Font/ThaleahFat.ttf"))
     {
         std::cout << "Error loading font!\n";
     }
 
+    std::vector<sf::Text> levels;
+    for (int i = 0; i < 4; i++)
+    {
+        sf::Text text;
+        text.setFont(font);
+        text.setString(std::to_string(i + 1));
+        text.setCharacterSize(70);
+        text.setFillColor(sf::Color::Black);
+        text.setPosition(605, 4);
+
+        levels.push_back(text);
+    }
+
+    sf::Text timeText;
+    timeText.setFont(font);
+    timeText.setCharacterSize(70);
+    timeText.setString(std::to_string(1));
+    timeText.setFillColor(sf::Color::White);
+    timeText.setPosition(1120, 50);
+
     // Clock
     sf::Clock clock;
     sf::Time duration01 = sf::seconds(30); // input thời gian ở đây nhé
-
     // =================== MAIN LOOP ===================
     while (window.isOpen())
     {
@@ -104,6 +128,16 @@ int main()
                 isExit = true;
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
                 isExit = true;
+            if (event.type == sf::Event::KeyPressed)
+            {
+#ifdef _WIN32
+                if (event.key.control && event.key.code == sf::Keyboard::S)
+                    isSave = true;
+#elif __APPLE__
+                if (event.key.system && event.key.code == sf::Keyboard::S)
+                    isSave = true;
+#endif
+            }
         }
 
         if (isExit)
@@ -171,6 +205,17 @@ int main()
             if (back_button.isClicked)
                 goBack(screenStack);
 
+            window.draw(levels[0]);
+            window.draw(timeText);
+
+            if (isSave)
+                SaveGame(window, isSave);
+                
+            if (isWin)
+            {
+                changeScreen(screenStack, ScreenState::MainMenu);
+            }
+
             break;
 
         case ScreenState::About:
@@ -181,10 +226,15 @@ int main()
             if (back_button.isClicked)
                 goBack(screenStack);
             break;
+
         case ScreenState::LoadGame:
             window.draw(load_game);
 
+            updateButton(back_button, window);
             drawButton(window, back_button);
+
+            if (back_button.isClicked)
+                goBack(screenStack);
 
             if (back_button.isClicked)
                 goBack(screenStack);
@@ -195,9 +245,40 @@ int main()
                 drawButton(window, slots[i]);
             }
 
+            for (int i = 0; i < rocks.size(); i++)
+            {
+                updateButton(rocks[i], window);
+                drawButton(window, rocks[i]);
+            }
+
+            if (rocks[2].isClicked)
+            {
+                isDelete = true;
+            }
+
+            if (rocks[1].isClicked)
+            {
+                changeScreen(screenStack, ScreenState::InGame); // xử lý logic ở đây nữa
+            }
+
+            if (rocks[0].isClicked)
+            {
+                // xử lí logic ở đây
+            }
+
+            if (isDelete)
+            {
+                deleteEffect(window, isDelete);
+            }
+            break;
+
+        case ScreenState::HowTo:
+            window.draw(how_to);
             updateButton(back_button, window);
             drawButton(window, back_button);
 
+            if (back_button.isClicked)
+                goBack(screenStack);
             break;
 
         default:
