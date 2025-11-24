@@ -1,150 +1,114 @@
-﻿#include "Feature.h"
+﻿#include "globals.h"
+#include "feature.h"
 
-void fixConsoleWindow() {
-    HWND consoleWindow = GetConsoleWindow();
-    LONG style = GetWindowLong(consoleWindow, GWL_STYLE);
-    style = style & ~(WS_MAXIMIZEBOX) & ~(WS_THICKFRAME);
-    SetWindowLong(consoleWindow, GWL_STYLE, style);
+// Hàm phụ trợ: Vẽ một ô vuông tại tọa độ logic (x, y)
+// Giúp code gọn hơn, không phải setPosition lặp lại nhiều lần
+void drawBlock(sf::RenderWindow& window, int x, int y, sf::Color color) {
+    // Trừ đi 2 pixel để tạo khe hở nhỏ giữa các ô, nhìn đẹp hơn
+    sf::RectangleShape block(sf::Vector2f(CELL_SIZE - 2, CELL_SIZE - 2));
+    block.setFillColor(color);
+
+    // Công thức: Tọa độ màn hình = (Tọa độ Logic * Kích thước ô) + Lề Bàn Cờ + Offset viền
+    block.setPosition(BOARD_X + x * CELL_SIZE + 1, BOARD_Y + y * CELL_SIZE + 1);
+
+    window.draw(block);
 }
 
-void HideConsoleCursor() {
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO cci;
-    GetConsoleCursorInfo(hOut, &cci);
-    cci.bVisible = FALSE;      // ẩn
-    SetConsoleCursorInfo(hOut, &cci);
-}
+void renderGame(sf::RenderWindow& window, sf::Font& font) {
 
-void ShowConsoleCursor() {
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO cci;
-    GetConsoleCursorInfo(hOut, &cci);
-    cci.bVisible = TRUE;       // hiện lại
-    SetConsoleCursorInfo(hOut, &cci);
-}
+    // 2. VẼ CỔNG (GATE)
+    // Chỉ vẽ khi cổng đang kích hoạt
+    if (GATE_ACTIVE) {
+        sf::Color gateColor = sf::Color::Cyan; // Màu xanh lơ cho cổng
+        int gx = GATE_POS.x;
+        int gy = GATE_POS.y;
 
-void startGame() {
-    system("cls");
-    srand((unsigned)time(NULL));          
+        // Vẽ cổng theo hình dáng chữ U ngược (như logic cũ)
+        // Hàng trên (3 ô)
+        drawBlock(window, gx - 1, gy - 1, gateColor);
+        drawBlock(window, gx, gy - 1, gateColor);
+        drawBlock(window, gx + 1, gy - 1, gateColor);
 
-    resetData();
-
-    loadLevel(1);
-
-    drawBoard(0, 0, WIDTH_CONSOLE, HEIGHT_CONSOLE);
-
-    STATE = 1;
-}
-
-
-void exitGame(HANDLE t) {
-    system("cls");
-    TerminateThread(t, 0);
-}
-
-void pauseGame(HANDLE t) {
-    if (STATE == 1) {
-        STATE = 0;
-        SuspendThread(t);
-    }
-    else if (STATE == 0) {
-        STATE = 1;
-        ResumeThread(t);
-    }
-}
-
-void drawBoard(int x, int y, int width, int height, int curPosX, int curPosY) {
-    gotoXY(x, y); cout << 'X';
-    for (int i = 1; i < width; i++) cout << 'X';
-    cout << 'X';
-
-    gotoXY(x, height + y); cout << 'X';
-    for (int i = 1; i < width; i++) cout << 'X';
-    cout << 'X';
-
-    for (int i = y + 1; i < height + y; i++) {
-        gotoXY(x, i); cout << 'X';
-        gotoXY(x + width, i); cout << 'X';
+        // Hàng dưới (2 chân)
+        drawBlock(window, gx - 1, gy, gateColor);
+        drawBlock(window, gx + 1, gy, gateColor);
     }
 
-    gotoXY(curPosX, curPosY);
-}
+    // 3. VẼ THỨC ĂN (FOOD)
+    sf::Color foodColor;
+    // 0: Normal (Đỏ), 1: Big (Tím), 2: Poison (Xanh lá độc/Vàng)
+    if (FOOD_TYPE[0] == 0)      foodColor = sf::Color::Red;
+    else if (FOOD_TYPE[0] == 1) foodColor = sf::Color::Magenta;
+    else                        foodColor = sf::Color(200, 200, 0); // Màu vàng tối cho thuốc độc
 
-void drawGate() {
-    if (!GATE_ACTIVE) return;
+    // Vẽ mồi hình tròn để khác biệt với rắn
+    sf::CircleShape foodShape(CELL_SIZE / 2.0f - 2);
+    foodShape.setFillColor(foodColor);
+    foodShape.setPosition(BOARD_X + food[0].x * CELL_SIZE + 2, BOARD_Y + food[0].y * CELL_SIZE + 2);
+    window.draw(foodShape);
 
-    int x = GATE_POS.x;
-    int y = GATE_POS.y;
-    GATE_SIZE = 0;
+    // 4. VẼ RẮN (SNAKE)
+    std::string mssv_digits = "2412711124127406241275102412752224127550";
 
-    // trên cùng (3 ô)
-    GATE[GATE_SIZE++] = { x - 1, y - 1 };
-    GATE[GATE_SIZE++] = { x,     y - 1 };
-    GATE[GATE_SIZE++] = { x + 1, y - 1 };
-
-    // dưới (2 ô)
-    GATE[GATE_SIZE++] = { x - 1, y };
-    GATE[GATE_SIZE++] = { x + 1, y };
-
-    // in ra màn hình
-    for (int i = 0; i < GATE_SIZE; i++) {
-        gotoXY(GATE[i].x, GATE[i].y);
-        printf("@");  // ký tự thể hiện cổng
-    }
-}
-
-
-void eraseGate() {
-    int x = GATE_POS.x;
-    int y = GATE_POS.y;
-
-    for (int dy = -1; dy <= 0; dy++) {
-        for (int dx = -1; dx <= 1; dx++) {
-            if (!(dy == 0 && dx == 0)) { // bỏ điểm giữa nếu bạn muốn rỗng
-                gotoXY(x + dx, y + dy);
-                printf(" ");
-            }
-        }
-    }
-    GATE_SIZE = 0;
-}
-
-
-void processDead() {
-    STATE = 0;
-    gotoXY(0, HEIGHT_CONSOLE + 2);
-    printf("Dead, type y to continue or anykey to exit");
-}
-
-void drawSnake() {
-    static const char* MSSV_SEQ = "2412711124127406241275102412752224127550";
-    int L = (int)strlen(MSSV_SEQ);
+    // Tạo một đối tượng Text (chỉ 1 lần là đủ)
+    sf::Text mssv_text;
+    mssv_text.setFont(font);
+    // Đặt kích thước chữ nhỏ hơn ô, ví dụ 70% kích thước ô
+    mssv_text.setCharacterSize(static_cast<unsigned int>(CELL_SIZE * 0.7));
 
     for (int i = 0; i < SIZE_SNAKE; ++i) {
-        // BỎ QUA đốt đã qua cổng
+        if (IS_PASSING_GATE) {
+            int gx = GATE_POS.x;
+            int gy = GATE_POS.y; // Đây là tọa độ "miệng" cổng (ô trống)
+
+            // Cổng hình chữ U ngược có 3 ô trên cùng ở hàng (gy - 1).
+            // "Bên trong" cổng là khi y <= gy - 1.
+            // Chúng ta ẩn bất kỳ đốt rắn nào có tọa độ y <= (gy - 1)
+            // (Tức là đã chui vào HOẶC chui qua hàng trên cùng của cổng)
+            // Logic này giả định rắn luôn đi LÊN (y giảm) để qua cổng.
+            if (snake[i].y <= gy - 1) {
+                continue; // Bỏ qua, không vẽ đốt này
+            }
+        }
+
         if (!SNAKE_VISIBLE[i]) continue;
 
-        // khoảng cách từ đầu về đốt hiện tại
-        int idx = (SIZE_SNAKE - 1 - i) % L;   // i = SIZE_SNAKE-1 (đầu) -> idx = 0
-        char c = MSSV_SEQ[idx];
+        sf::Color bodyColor;
+        if (i == 0) {
+            bodyColor = sf::Color(255, 0, 128); // Đầu rắn: Hồng cute
+        }
+        else {
+            bodyColor = (i % 2 == 0) ? sf::Color(0, 200, 0) : sf::Color(0, 160, 0);
+        }
 
-        gotoXY(snake[i].x, snake[i].y);
-        putchar(c);
+        drawBlock(window, snake[i].x, snake[i].y, bodyColor);
+
+        // *** 4.B. VẼ MSSV LÊN TRÊN ĐỐT RẮN ***
+
+        // Lấy ký tự tại vị trí 'i', nếu rắn dài hơn chuỗi thì lặp lại từ đầu
+        char digit_char = mssv_digits[i % mssv_digits.length()];
+        std::string digit_string(1, digit_char); // Chuyển char thành string
+
+        mssv_text.setString(digit_string);
+
+        // Đổi màu text để tương phản (ví dụ: đầu rắn màu sáng thì text màu đen)
+        if (i == 0) {
+            mssv_text.setFillColor(sf::Color::Black);
+        }
+        else {
+            mssv_text.setFillColor(sf::Color::White);
+        }
+
+        // Căn giữa chữ vào giữa ô
+        sf::FloatRect textBounds = mssv_text.getLocalBounds();
+        mssv_text.setOrigin(textBounds.left + textBounds.width / 2.0f,
+            textBounds.top + textBounds.height / 2.0f);
+
+        mssv_text.setPosition(
+            BOARD_X + snake[i].x * CELL_SIZE + CELL_SIZE / 2.0f,
+            BOARD_Y + snake[i].y * CELL_SIZE + CELL_SIZE / 2.0f
+        );
+
+        window.draw(mssv_text);
     }
 }
-
-
-// O = thường, Q = big, X = độc
-void drawFood() {
-    gotoXY(food[FOOD_INDEX].x, food[FOOD_INDEX].y);
-    switch (FOOD_TYPE[FOOD_INDEX]) {
-    case FOOD_NORMAL: printf("O"); break;
-    case FOOD_BIG:    printf("Q"); break;
-    case FOOD_POISON: printf("X"); break;
-    default:          printf("O"); break;
-    }
-}
-
-
-
-

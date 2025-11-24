@@ -1,5 +1,16 @@
 ﻿#pragma once
 #include <windows.h>
+#include <SFML/Graphics.hpp>
+#include <vector>
+#include <cmath>
+#include <algorithm> 
+#include "feature.h"
+#include "gameLogic.h"
+
+// ==== Cấu hình Đồ họa ====
+#define CELL_SIZE 32        // Kích thước 1 ô (pixel). 32x32 là đẹp cho màn 1280x720
+#define BOARD_X 40          // Tọa độ X bắt đầu lưới game (tránh đè lên UI bên trái)
+#define BOARD_Y 40          // Tọa độ Y bắt đầu lưới game (tránh đè lên UI bên trên)
 
 // ==== Config ====
 #define MAX_SIZE_SNAKE    128
@@ -10,6 +21,8 @@
 #define MAX_SPEED         6
 #define MAX_WALLS         1024
 #define MAX_GATE_SIZE    5
+#define MAX_GRID_HEIGHT 30
+#define MAX_GRID_WIDTH 40
 
 // ==== Trạng thái bàn/rắn ====
 extern POINT snake[MAX_SIZE_SNAKE];
@@ -43,3 +56,4 @@ extern int FOOD_VALUE[MAX_SIZE_FOOD];     // +2 / -2 / +6
 // ==== Tường / Map (dữ liệu map do GameLogic chuẩn bị) ====
 extern POINT WALLS[MAX_WALLS];
 extern int   WALL_COUNT;
+extern int   game_map[MAX_GRID_HEIGHT][MAX_GRID_WIDTH];
