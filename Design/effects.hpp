@@ -11,5 +11,6 @@ void deleteEffect(sf::RenderWindow& window, bool& isDelete);
 void victoryEffect(sf::RenderWindow& window, bool& isVictory);
 void loseEffect(sf::RenderWindow& window, bool& isLose);
 void SaveGame(sf::RenderWindow& window, bool& isSave);
+void PauseGame(sf::RenderWindow& window, bool& isPause);
 
 #endif

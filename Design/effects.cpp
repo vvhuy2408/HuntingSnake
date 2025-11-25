@@ -114,4 +114,23 @@ void SaveGame(sf::RenderWindow& window, bool& isSave)
     }
 }
 
+void PauseGame(sf::RenderWindow& window, bool& isPause)
+{
+    loadTexture("Design/Assets/pause.png", "pause-box");
+    sf::Sprite pause = makeSprite("pause-box", 267, 170);
+
+    static Button confirm_button = createButton("Design/Assets/button/confirm.png", "", 630, 427);
+    
+    updateButton(confirm_button, window);
+
+    window.draw(pause);
+    drawButton(window, confirm_button);
+
+    if (confirm_button.isClicked){
+        // logic
+        isPause = false;
+    }
+}
+
+
 // ========================= SOUND EFFECT =========================

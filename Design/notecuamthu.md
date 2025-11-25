@@ -11,8 +11,10 @@ Tương tự vậy với Lose frane:
 Hiệu ứng Save Game:
 - người dùng ấn Ctrl + S -> hiện ra Save Game.
 
+Hiệu ứng Pause Game:
+- người dùng ấn P -> Pause game -> confirm button is clicked -> continue (đã oke r, thiếu logic pause nếu cần)
+
 T có làm hàm r, chỉ cần gắn vô main th nhé. Làm tương tự cái isExit với isDelete á. Còn thiếu logic sơ bộ khi delete (xoá một slot), rename(đổi tên slot), lose(khi người chơi thua và muốn quay về màn chơi gần nhất). 
-Logic Win:
 
 Progress bar: T chia làm 6 cái ảnh để tương ứng với 6 tiến độ điểm trong một vòng chơi nha. T có đánh stt rồi từ nhỏ đến lớn, trong Design/Assets
 

@@ -18,10 +18,15 @@ int main()
     // Backgrounds
     sf::Sprite start_game = loadInterface("Design/Assets/startgame.png", "start-game", window);
     sf::Sprite main_menu = loadInterface("Design/Assets/mainmenu.png", "main-menu", window);
-    sf::Sprite in_game = loadInterface("Design/Assets/ingame.png", "in-game", window);
+    sf::Sprite in_game = loadInterface("Design/Assets/ingame.png", "in-game", window); // nếu cần thì xoá cái này
     sf::Sprite about_us = loadInterface("Design/Assets/info.png", "about-us", window);
     sf::Sprite load_game = loadInterface("Design/Assets/loadgame.png", "load-game", window);
     sf::Sprite how_to = loadInterface("Design/Assets/howto.png", "how-to", window);
+
+    // Round
+    sf::Sprite round01 = loadInterface("Design/Assets/round01.png", "round-01", window);
+    sf::Sprite round02 = loadInterface("Design/Assets/round02.png", "round-02", window);
+    sf::Sprite round03 = loadInterface("Design/Assets/round03.png", "hround-03", window);
 
     // Buttons
     Button start_button = createButton("Design/Assets/button/start.png", "", 640, 550);
@@ -66,6 +71,22 @@ int main()
     howto_button.hoverOffset = sf::Vector2f(35.f, 0.f);
     about_button.hoverOffset = sf::Vector2f(35.f, 0.f);
 
+    // Enemy and fence for round 3
+    sf::Texture enemy_text;
+    if (!enemy_text.loadFromFile("Design/assets/enemy.png")) {
+        std::cout << "Enemy: error loading file" << std::endl;
+    }
+    sf::Sprite enemy_spr;
+    enemy_spr.setTexture(enemy_text);
+
+    // phần này t code một cái trước th
+    sf::Texture wall_text;
+    if (!enemy_text.loadFromFile("Design/assets/wall.png")) {
+        std::cout << "Wall: error loading file" << std::endl;
+    }
+    sf::Sprite wall_spr;
+    wall_spr.setTexture(wall_text);
+
     // Music
     sf::Music backgroundMusic;
     if (!backgroundMusic.openFromFile("Design/Music/background.ogg"))
@@ -83,6 +104,7 @@ int main()
     bool isSave = false;
     bool isWin = false;
     bool isLose = false;
+    bool isPause = false;
 
     // Initialize the screen stack once
     std::stack<ScreenState> screenStack;
@@ -95,19 +117,6 @@ int main()
         std::cout << "Error loading font!\n";
     }
 
-    std::vector<sf::Text> levels;
-    for (int i = 0; i < 4; i++)
-    {
-        sf::Text text;
-        text.setFont(font);
-        text.setString(std::to_string(i + 1));
-        text.setCharacterSize(70);
-        text.setFillColor(sf::Color::Black);
-        text.setPosition(605, 4);
-
-        levels.push_back(text);
-    }
-
     sf::Text timeText;
     timeText.setFont(font);
     timeText.setCharacterSize(70);
@@ -118,6 +127,7 @@ int main()
     // Clock
     sf::Clock clock;
     sf::Time duration01 = sf::seconds(30); // input thời gian ở đây nhé
+
     // =================== MAIN LOOP ===================
     while (window.isOpen())
     {
@@ -138,6 +148,8 @@ int main()
                     isSave = true;
 #endif
             }
+            if (event.key.code == sf::Keyboard::P)
+                isPause = true;
         }
 
         if (isExit)
@@ -205,15 +217,19 @@ int main()
             if (back_button.isClicked)
                 goBack(screenStack);
 
-            window.draw(levels[0]);
             window.draw(timeText);
 
             if (isSave)
                 SaveGame(window, isSave);
-                
+
             if (isWin)
             {
                 changeScreen(screenStack, ScreenState::MainMenu);
+            }
+
+            if (isPause)
+            {
+                PauseGame(window, isPause);
             }
 
             break;
