@@ -252,9 +252,6 @@ int main()
             if (back_button.isClicked)
                 goBack(screenStack);
 
-            if (back_button.isClicked)
-                goBack(screenStack);
-
             for (int i = 0; i < slots.size(); i++)
             {
                 updateButton(slots[i], window);
