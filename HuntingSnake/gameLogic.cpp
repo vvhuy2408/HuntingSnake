@@ -28,7 +28,7 @@ void growSnake() {
 bool isSnakeBody(int x, int y) {
     // Kiểm tra va chạm từ đốt 1 trở đi (đốt 0 là đầu)
     for (int i = 1; i < SIZE_SNAKE; i++) {
-        if (snake[i].x == x && snake[i].y == y && SNAKE_VISIBLE[i]) 
+        if (snake[i].x == x && snake[i].y == y && SNAKE_VISIBLE[i])
             return true;
     }
     return false;
@@ -46,12 +46,29 @@ int isWall(int x, int y) {
     return 0;
 }
 
+bool isGate(int x, int y) {
+    if (!GATE_ACTIVE) return false;
+
+    for (int i = 0; i < GATE_SIZE; i++) {
+        if (GATE[i].x == x && GATE[i].y == y)
+            return true;
+    }
+    return false;
+}
+
+int levelTargetPoints(int lv) {
+    if (lv == 1) return 10;
+    if (lv == 2) return 14;
+    if (lv == 3) return 20;
+    return 30;
+}
+
 // ================= CÁC HÀM LOGIC GAME =================
 
 void resetSnakePosition() {
-    int startX = WIDTH_CONSOLE / 2; 
+    int startX = WIDTH_CONSOLE / 2;
     int startY = HEIGHT_CONSOLE / 2;
-    
+
     // Reset vị trí: Đầu tại startX, đuôi kéo dài về bên trái
     for (int i = 0; i < SIZE_SNAKE; ++i) {
         snake[i] = { startX - i, startY };
@@ -60,14 +77,20 @@ void resetSnakePosition() {
 }
 
 void generateFood() {
+
+    if (GATE_ACTIVE) {
+        FOOD_ACTIVE = false;
+        return;
+    }
+
     int x, y;
     do {
         x = rand() % WIDTH_CONSOLE;
         y = rand() % HEIGHT_CONSOLE;
-    } while (isSnakeBody(x, y) || isWall(x, y) || (GATE_ACTIVE && x == GATE_POS.x && y == GATE_POS.y));
+    } while (isSnakeBody(x, y) || isWall(x, y));
 
     food[0] = { x, y };
-    
+
     // Random loại mồi
     int r = rand() % 100;
     if (LEVEL < 3) FOOD_TYPE[0] = (r < 90) ? 0 : 2; // 0: Normal, 2: Poison
@@ -76,6 +99,7 @@ void generateFood() {
         else if (r < 85) FOOD_TYPE[0] = 1; // 1: Big
         else FOOD_TYPE[0] = 2;
     }
+    FOOD_ACTIVE = true;
 }
 
 void buildWalls(int lv) {
@@ -87,7 +111,7 @@ void buildWalls(int lv) {
     }
 
     // 2. Xây tường (collision map) cho Level 1
-    if (lv == 1) {
+
 
         int top_y = 2;      // Hàng rào trên ở hàng y=2
         int bottom_y = 19;  // Hàng rào dưới ở hàng y=19
@@ -159,18 +183,21 @@ void buildWalls(int lv) {
         }
 
         // (Không cần lấp bên trái vì left_x = 0 đã là tường)
-    }
+    
     // else if (lv == 2) {
     //     // Xây tường cho level 2...
     // }
 }
 void loadLevel(int lv) {
     LEVEL = lv;
+    LEVEL_TARGET = levelTargetPoints(lv);
+    LEVEL_PROGRESS = 0;
+
     GATE_ACTIVE = 0;
     IS_PASSING_GATE = 0;
     resetSnakePosition();
     generateFood();
-    
+
     buildWalls(lv);
 }
 
@@ -184,33 +211,58 @@ void onEnterGate() {
 void maybeOpenGate() {
     if (GATE_ACTIVE) return;
     GATE_ACTIVE = 1;
-    
+
+    if (FOOD_ACTIVE) {
+        FOOD_ACTIVE = false;
+    }
+
     int x, y;
     do {
         x = 2 + rand() % (WIDTH_CONSOLE - 4);
         y = 2 + rand() % (HEIGHT_CONSOLE - 4);
-    } while (isSnakeBody(x, y));
-    
+    } while (isSnakeBody(x, y) || isWall(x, y));
+
     GATE_POS = { x, y };
+    GATE_SIZE = 0; 
+    // trên cùng (3 ô) 
+    GATE[GATE_SIZE++] = { x - 1, y - 1 }; 
+    GATE[GATE_SIZE++] = { x, y - 1 }; 
+    GATE[GATE_SIZE++] = { x + 1, y - 1 }; 
+    // dưới (2 ô) 
+    GATE[GATE_SIZE++] = { x - 1, y }; 
+    GATE[GATE_SIZE++] = { x + 1, y };
 }
 
 void onAte() {
+    if (GATE_ACTIVE) {
+        return;
+    }
+
     // Xử lý điểm
-    int val = (FOOD_TYPE[0] == 0) ? 1 : (FOOD_TYPE[0] == 1 ? 5 : -5);
-    SCORE += val;
-    if (SCORE < 0) SCORE = 0;
+    int type = FOOD_TYPE[0];
+    int value = (type == 0) ? 2 : (type == 1 ? 6 : -2);
+    SCORE += value;
+    LEVEL_PROGRESS += value;
+    if (LEVEL_PROGRESS < 0) LEVEL_PROGRESS = 0;
 
     // Xử lý độ dài
-    if (FOOD_TYPE[0] == 2) { // Ăn độc giảm độ dài
-        if (SIZE_SNAKE > BASE_LENGTH) SIZE_SNAKE--;
-    } else {
+    if (type == 2) { // Ăn độc giảm độ dài
+        if (SIZE_SNAKE > BASE_LENGTH) {
+            SIZE_SNAKE--;
+        }
+    }
+    else {
         growSnake();
     }
-    
-    // Kiểm tra mở cổng (Ví dụ mỗi level cần 5 * LEVEL điểm để qua màn)
-    if (SCORE >= LEVEL * 5 && !GATE_ACTIVE) {
-        maybeOpenGate();
-    } else {
+
+    // Nếu đủ điểm -> mở cổng (và chắc chắn không sinh food)
+    if (LEVEL_PROGRESS >= LEVEL_TARGET) {
+        LEVEL_PROGRESS = LEVEL_TARGET; // clamp
+        if (!GATE_ACTIVE) {
+            maybeOpenGate(); // maybeOpenGate() đã xóa food và đặt FOOD_ACTIVE=false
+        }
+    }
+    else {
         generateFood();
     }
 }
@@ -223,11 +275,13 @@ void resetData() {
     SCORE = 0;
     LEVEL = 1;
     STATE = 1;
-    
+
+    IS_PASSING_GATE = 0;
+    SIZE_SNAKE = 8;
     // Config kích thước bàn chơi (Logic Grid)
     WIDTH_CONSOLE = 38;
     HEIGHT_CONSOLE = 20;
-    
+
     loadLevel(1);
 }
 
@@ -254,8 +308,8 @@ void updateGameLogic() {
 
         // Đốt cuối chạm cổng thì qua màn
         if (tail.x == GATE_POS.x && tail.y == GATE_POS.y) {
-            IS_PASSING_GATE = 0; 
-            onEnterGate();       
+            IS_PASSING_GATE = 0;
+            onEnterGate();
             return;
         }
     }
@@ -278,16 +332,19 @@ void updateGameLogic() {
     // --- KIỂM TRA VA CHẠM (CHẾT) ---
     if (IS_PASSING_GATE == 0) {
         // 1. Đụng tường biên
-        if (newHead.x < 0 || newHead.x >= WIDTH_CONSOLE ||
+        /*if (newHead.x < 0 || newHead.x >= WIDTH_CONSOLE ||
             newHead.y < 0 || newHead.y >= HEIGHT_CONSOLE) {
             STATE = 0; return;
-        }
+        }*/
         // 2. Đụng thân
         if (isSnakeBody(newHead.x, newHead.y)) {
             STATE = 0; return;
         }
         // 3. Đụng tường chướng ngại vật
         if (isWall(newHead.x, newHead.y)) {
+            STATE = 0; return;
+        }
+        if (isGate(newHead.x, newHead.y)) {
             STATE = 0; return;
         }
     }

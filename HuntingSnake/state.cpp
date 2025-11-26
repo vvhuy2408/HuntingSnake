@@ -26,7 +26,7 @@ int   GATE_SIZE = 0;
 POINT GATE[MAX_GATE_SIZE];
 int IS_PASSING_GATE = 0;
 
-
+bool FOOD_ACTIVE = false;
 int   FOOD_TYPE[MAX_SIZE_FOOD] = { FOOD_NORMAL };
 int   FOOD_VALUE[MAX_SIZE_FOOD] = { 2 };
 
