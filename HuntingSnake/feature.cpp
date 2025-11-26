@@ -34,19 +34,21 @@ void renderGame(sf::RenderWindow& window, sf::Font& font) {
         drawBlock(window, gx + 1, gy, gateColor);
     }
 
+    if (FOOD_ACTIVE && !GATE_ACTIVE) {
     // 3. VẼ THỨC ĂN (FOOD)
-    sf::Color foodColor;
-    // 0: Normal (Đỏ), 1: Big (Tím), 2: Poison (Xanh lá độc/Vàng)
-    if (FOOD_TYPE[0] == 0)      foodColor = sf::Color::Red;
-    else if (FOOD_TYPE[0] == 1) foodColor = sf::Color::Magenta;
-    else                        foodColor = sf::Color(200, 200, 0); // Màu vàng tối cho thuốc độc
+        sf::Color foodColor;
+        // 0: Normal (Đỏ), 1: Big (Tím), 2: Poison (Xanh lá độc/Vàng)
+        if (FOOD_TYPE[0] == 0)      foodColor = sf::Color::Red;
+        else if (FOOD_TYPE[0] == 1) foodColor = sf::Color::Magenta;
+        else                        foodColor = sf::Color(200, 200, 0); // Màu vàng tối cho thuốc độc
 
-    // Vẽ mồi hình tròn để khác biệt với rắn
-    sf::CircleShape foodShape(CELL_SIZE / 2.0f - 2);
-    foodShape.setFillColor(foodColor);
-    foodShape.setPosition(BOARD_X + food[0].x * CELL_SIZE + 2, BOARD_Y + food[0].y * CELL_SIZE + 2);
-    window.draw(foodShape);
-
+        // Vẽ mồi hình tròn để khác biệt với rắn
+        sf::CircleShape foodShape(CELL_SIZE / 2.0f - 2);
+        foodShape.setFillColor(foodColor);
+        foodShape.setPosition(BOARD_X + food[0].x * CELL_SIZE + 2, BOARD_Y + food[0].y * CELL_SIZE + 2);
+        window.draw(foodShape);
+    }
+    
     // 4. VẼ RẮN (SNAKE)
     std::string mssv_digits = "2412711124127406241275102412752224127550";
 

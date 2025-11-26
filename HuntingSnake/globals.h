@@ -49,6 +49,7 @@ extern int   IS_PASSING_GATE;
 extern int   PASSING_JUST_STARTED;
 
 // ==== Loại food ====
+extern bool FOOD_ACTIVE;
 enum { FOOD_NORMAL = 0, FOOD_POISON = 2, FOOD_BIG = 1 };
 extern int FOOD_TYPE[MAX_SIZE_FOOD];      // loại của food[FOOD_INDEX]
 extern int FOOD_VALUE[MAX_SIZE_FOOD];     // +2 / -2 / +6
