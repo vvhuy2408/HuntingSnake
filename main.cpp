@@ -230,7 +230,22 @@ int main()
 
         case ScreenState::InGame:
             // 1. Vẽ nền trước (còn thiếu logic vẽ nền dựa vào biến level)
-            window.draw(round01);
+            switch (LEVEL)
+            {
+            case 1:
+                window.draw(round01);
+                break;
+            case 2:
+                window.draw(round02);
+                break;
+            case 3:
+                window.draw(round03);
+                break;
+            default:
+                // Safety: fall back to round01 if LEVEL is out of range
+                window.draw(round01);
+                break;
+            }
 
             // 2. Cập nhật Logic game (Di chuyển rắn)
             // Điều chỉnh tốc độ: Ví dụ SPEED=1 -> 0.5s/bước, SPEED=5 -> 0.1s/bước
