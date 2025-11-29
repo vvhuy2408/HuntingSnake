@@ -1,5 +1,6 @@
 ﻿#include "effects.hpp"
 #include "textureManager.hpp"
+#include "../HuntingSnake/globals.h" 
 
 void exitEffect(sf::RenderWindow& window, bool& isExit){
     loadTexture("Design/Assets/exitbox.png", "exit-box");
@@ -70,28 +71,33 @@ void victoryEffect(sf::RenderWindow& window, bool& isVictory)
     }
 }
 
-void loseEffect(sf::RenderWindow& window, bool& isLose)
+int loseEffect(sf::RenderWindow& window)
 {
     loadTexture("Design/Assets/lose.png", "lose-box");
     sf::Sprite lose = makeSprite("lose-box", 267, 170);
 
+    // Các button giữ trạng thái static để không recreate mọi frame
     static Button confirm_button = createButton("Design/Assets/button/confirm.png", "", 530, 427);
     static Button exit_button = createButton("Design/Assets/button/exit.png", "", 740, 427);
 
+    // Cập nhật trạng thái button (bắt event mouse/hover/click)
     updateButton(confirm_button, window);
     updateButton(exit_button, window);
 
+    // Vẽ
     window.draw(lose);
     drawButton(window, confirm_button);
     drawButton(window, exit_button);
 
     if (confirm_button.isClicked) {
-        // xử lý logic
-        isLose = false;
+        // Trả về confirm action
+        return 1;
     }
     else if (exit_button.isClicked) {
-        isLose = false;
+        return 2;
     }
+
+    return 0;
 }
 
 void SaveGame(sf::RenderWindow& window, bool& isSave)
@@ -133,6 +139,8 @@ void PauseGame(sf::RenderWindow& window, bool& isPause)
     if (confirm_button.isClicked) {
         // logic
         isPause = false;
+		STATE = 1; // resume game
+        confirm_button.isClicked = false;
     }
 }
 

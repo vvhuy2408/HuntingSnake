@@ -163,11 +163,11 @@ int main()
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::P)
                 isPause = !isPause;
 
-            // --- XỬ LÝ INPUT RẮN (Chỉ khi đang InGame) ---
-            if (!screenStack.empty() && screenStack.top() == ScreenState::InGame) {
+            // --- XỬ LÝ INPUT RẮN (Chỉ khi đang InGame và không pause) ---
+            if (!screenStack.empty() && screenStack.top() == ScreenState::InGame && !isPause) {
                 if (event.type == sf::Event::KeyPressed) {
                     handleInput(event.key.code); // Hàm từ gameLogic.cpp
-        }
+                }
             }
         }
 
@@ -213,7 +213,7 @@ int main()
             drawButton(window, about_button);
 
             if (back_button.isClicked)
-                goBack(screenStack);
+				goBack(screenStack);
 
             if (howto_button.isClicked)
                 changeScreen(screenStack, ScreenState::HowTo);
@@ -232,58 +232,90 @@ int main()
             break;
 
         case ScreenState::InGame:
-            // 1. Vẽ nền trước (còn thiếu logic vẽ nền dựa vào biến level)
+        {
+            // 1. Vẽ nền theo level
             switch (LEVEL)
             {
-            case 1:
-                window.draw(round01);
-                break;
-            case 2:
-                window.draw(round02);
-                break;
-            case 3:
-                window.draw(round03);
-                break;
-            default:
-                // Safety: fall back to round01 if LEVEL is out of range
-                window.draw(round01);
-                break;
+            case 1: window.draw(round01); break;
+            case 2: window.draw(round02); break;
+            case 3: window.draw(round03); break;
+            default: window.draw(round01); break;
             }
 
-            // 2. Cập nhật Logic game (Di chuyển rắn)
-            // Điều chỉnh tốc độ: Ví dụ SPEED=1 -> 0.5s/bước, SPEED=5 -> 0.1s/bước
-            if (timeAccumulator > 0.5f / (SPEED > 0 ? SPEED : 1)) {
-                timeAccumulator = 0;
-                updateGameLogic(); // Hàm từ gameLogic.cpp
-            }
+            // 2. VẼ GAME (view) trước UI/modal để modal nằm trên cùng
+            renderGame(window, font);
 
-            // 3. Vẽ Rắn, Mồi, Cổng... đè lên nền
-            renderGame(window, font); // Hàm từ Feature.cpp (view)
-
-            // 4. Vẽ UI (Nút Back) đè lên cùng
+            // 3. VẼ & cập nhật nút Back (luôn cập nhật)
             updateButton(back_button, window);
             drawButton(window, back_button);
 
-            if (back_button.isClicked) {
-                STATE = 0; // Dừng game
-                goBack(screenStack);
+            // 4. Nếu đang hiển thị Lose popup -> xử lý Lose (ưu tiên modal lose)
+            if (STATE == 0 && !isLose) {
+                isLose = true;
+                backgroundMusic.pause();
             }
 
+            if (isLose) {
+                int action = loseEffect(window); // 0 = nothing, 1 = replay, 2 = menu
+                if (action == 1) {
+                    startGame();
+                    STATE = 1;
+                    isLose = false;
+                    isPause = false;
+                    while (!screenStack.empty()) screenStack.pop();
+                    screenStack.push(ScreenState::InGame);
+                    backgroundMusic.play();
+                    // reset clock so we don't jump frames
+                    gameClock.restart();
+                    timeAccumulator = 0.f;
+                }
+                else if (action == 2) {
+                    isLose = false;
+                    isPause = false;
+                    STATE = 0;
+                    while (!screenStack.empty()) screenStack.pop();
+                    screenStack.push(ScreenState::StartMenu);
+                    backgroundMusic.play();
+                }
+                // nếu isLose thì KHÔNG xử lý logic tiếp (modal chắn hết)
+                window.draw(timeText);
+                break; // thoát case để đảm bảo không vào phần logic / pause nữa
+            }
+
+            // 5. Xử lý Back button
+            if (back_button.isClicked) {
+				isPause = !isPause;
+            }
+
+            // 6. Nếu đang Pause -> xử lý modal Pause, và sau khi resume reset clock & skip logic
+            if (isPause) {
+                PauseGame(window, isPause); // trong PauseGame bạn đã set STATE=1 khi resume
+                if (!isPause) {
+                    // user vừa resume -> reset clocks để tránh nhảy nhiều bước
+                    gameClock.restart();
+                    timeAccumulator = 0.f;
+                    backgroundMusic.play();
+                }
+                window.draw(timeText);
+                break; // pause modal active: không chạy updateGameLogic trong cùng frame
+            }
+
+            // 7. CHỈ khi không pause và không lose: cập nhật logic game theo timeAccumulator
+            // (đảm bảo timeAccumulator tính từ gameClock.restart() đã được reset khi resume)
+            if (timeAccumulator > 0.5f / (SPEED > 0 ? SPEED : 1)) {
+                timeAccumulator = 0.f;
+                updateGameLogic();
+            }
+
+            // 8. UI phụ, save, win...
             window.draw(timeText);
 
-            if (isSave)
-                SaveGame(window, isSave);
+            if (isSave) SaveGame(window, isSave);
+            if (isWin) changeScreen(screenStack, ScreenState::MainMenu);
 
-            if (isWin)
-            {
-                changeScreen(screenStack, ScreenState::MainMenu);
-            }
-
-            if (isPause)
-            {
-                PauseGame(window, isPause);
-            }
             break;
+        }
+
 
         case ScreenState::About:
             window.draw(about_us);
