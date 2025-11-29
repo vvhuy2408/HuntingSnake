@@ -148,7 +148,7 @@ int main()
             if (event.type == sf::Event::Closed)
                 isExit = true;
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-                isExit = true;
+                isExit = !isExit;
             if (event.type == sf::Event::KeyPressed)
             {
 #ifdef _WIN32
@@ -159,6 +159,9 @@ int main()
                     isSave = true;
 #endif
             }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::P)
+                isPause = !isPause;
 
             // --- XỬ LÝ INPUT RẮN (Chỉ khi đang InGame) ---
             if (!screenStack.empty() && screenStack.top() == ScreenState::InGame) {
