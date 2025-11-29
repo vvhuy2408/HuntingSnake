@@ -16,6 +16,54 @@ void drawBlock(sf::RenderWindow& window, int x, int y, sf::Color color) {
 
 void renderGame(sf::RenderWindow& window, sf::Font& font) {
 
+    // 1.1 VẼ ĐIỂM SỐ (SCORE) - Vẽ vào vị trí POINT trên background
+    sf::Text scoreText;
+    scoreText.setFont(font);
+    scoreText.setCharacterSize(40);
+    scoreText.setFillColor(sf::Color::Yellow);
+    scoreText.setOutlineThickness(2);
+    scoreText.setOutlineColor(sf::Color::Black);
+    scoreText.setString(std::to_string(SCORE));
+    // Căn vào vị trí "(34, 8)" trên background - điều chỉnh tọa độ pixel cho khớp
+    int gridX = 34;
+    int gridY = 8;
+    int scoreX = gridX * CELL_SIZE + BOARD_X;
+    int scoreY = gridY * CELL_SIZE + BOARD_Y;
+    scoreText.setPosition(scoreX, scoreY); // Điều chỉnh vị trí này cho khớp với "POINT" trong ảnh
+    window.draw(scoreText);
+
+    // 1.2 VẼ PROGRESS BAR
+    // Vị trí và kích thước thanh progress
+    int barX = 34 * CELL_SIZE + BOARD_X;  // Cùng cột với SCORE
+    int barY = 7 * CELL_SIZE + BOARD_Y;   // Ở trên POINT một chút
+    int barWidth = 130;                    // Chiều rộng thanh
+    int barHeight = 20;                    // Chiều cao thanh
+    
+    // Vẽ khung thanh (nền)
+    sf::RectangleShape barBackground(sf::Vector2f(barWidth, barHeight));
+    barBackground.setPosition(barX, barY);
+    barBackground.setFillColor(sf::Color(50, 50, 50)); // Màu xám đậm
+    barBackground.setOutlineThickness(2);
+    barBackground.setOutlineColor(sf::Color::White);
+    window.draw(barBackground);
+    
+    // Vẽ thanh tiến độ (dựa trên SCORE, max = 30)
+    float progressPercent = std::min(SCORE / 30.0f, 1.0f); // Tỷ lệ 0.0 -> 1.0
+    int fillWidth = static_cast<int>(barWidth * progressPercent);
+    
+    sf::RectangleShape barFill(sf::Vector2f(fillWidth, barHeight));
+    barFill.setPosition(barX, barY);
+    
+    // Đổi màu theo tiến độ: xanh lục -> vàng -> đỏ
+    if (progressPercent < 0.5f) {
+        barFill.setFillColor(sf::Color::Green);
+    } else if (progressPercent < 0.8f) {
+        barFill.setFillColor(sf::Color::Yellow);
+    } else {
+        barFill.setFillColor(sf::Color::Red);
+    }
+    window.draw(barFill);
+
     // 2. VẼ CỔNG (GATE)
     // Chỉ vẽ khi cổng đang kích hoạt
     if (GATE_ACTIVE) {
