@@ -133,7 +133,7 @@ void PauseGame(sf::RenderWindow& window, bool& isPause)
 
     updateButton(confirm_button, window);
 
-    window.draw(pause);
+    //window.draw(pause);
     drawButton(window, confirm_button);
 
     if (confirm_button.isClicked) {

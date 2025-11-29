@@ -111,79 +111,97 @@ void buildWalls(int lv) {
     }
 
     // 2. Xây tường (collision map) cho Level 1
+    int top_y = 2;      // Hàng rào trên ở hàng y=2
+    int bottom_y = 19;  // Hàng rào dưới ở hàng y=19
+    int left_x = 0;     // Hàng rào trái ở cột x=0
 
+    // Tọa độ của bức tường gãy khúc bên phải
+    int right_wall_1_x = 28; // Tường phải (đoạn 1, x=28)
+    int right_wall_2_x = 37; // Tường phải (đoạn 2, x=37)
+    int right_break_y = 13;  // Chỗ gãy khúc ở hàng y=13
 
-        int top_y = 2;      // Hàng rào trên ở hàng y=2
-        int bottom_y = 19;  // Hàng rào dưới ở hàng y=19
-        int left_x = 0;     // Hàng rào trái ở cột x=0
+    // === Bắt đầu "vẽ" tường vào game_map ===
+    // game_map[y][x] = 1 có nghĩa là "đây là tường"
 
-        // Tọa độ của bức tường gãy khúc bên phải
-        int right_wall_1_x = 28; // Tường phải (đoạn 1, x=28)
-        int right_wall_2_x = 37; // Tường phải (đoạn 2, x=37)
-        int right_break_y = 13;  // Chỗ gãy khúc ở hàng y=13
+    // Vẽ hàng rào trên (từ trái qua phải, chừa khúc bên phải)
+    for (int x = left_x; x <= right_wall_1_x; x++) {
+       game_map[top_y][x] = 1;
+    }
 
+    // Vẽ hàng rào trái (từ trên xuống dưới)
+    for (int y = top_y; y <= bottom_y; y++) {
+        game_map[y][left_x] = 1;
+    }
 
-        // === Bắt đầu "vẽ" tường vào game_map ===
-        // game_map[y][x] = 1 có nghĩa là "đây là tường"
+    // Vẽ hàng rào dưới (từ trái qua phải, hết cỡ)
+    for (int x = left_x; x <= right_wall_2_x; x++) {
+        game_map[bottom_y][x] = 1;
+    }
 
-        // Vẽ hàng rào trên (từ trái qua phải, chừa khúc bên phải)
-        for (int x = left_x; x <= right_wall_1_x; x++) {
-            game_map[top_y][x] = 1;
+    // Vẽ hàng rào phải (phức tạp, 3 đoạn)
+    // Đoạn 1: Từ trên (y=2) xuống chỗ gãy (y=13)
+    for (int y = top_y; y <= right_break_y; y++) {
+        game_map[y][right_wall_1_x] = 1;
+    }
+    // Đoạn 2: Ngang (từ x=28 đến x=37) tại chỗ gãy (y=13)
+    for (int x = right_wall_1_x; x <= right_wall_2_x; x++) {
+        game_map[right_break_y][x] = 1;
+    }
+    // Đoạn 3: Từ chỗ gãy (y=13) xuống dưới (y=19)
+    for (int y = right_break_y; y <= bottom_y; y++) {
+        game_map[y][right_wall_2_x] = 1;
+    }
+
+    // === 2.2. "Lấp" các vùng BÊN NGOÀI hàng rào (Giải pháp của bạn) ===
+    // Đặt tất cả các ô bên ngoài khu vực chơi thành 1
+
+    // 2.2.1. Lấp vùng BÊN TRÊN hàng rào
+    for (int y = 0; y < top_y; ++y) {
+       for (int x = 0; x < WIDTH_CONSOLE; ++x) game_map[y][x] = 1;
+    }
+
+    // 2.2.2. Lấp vùng BÊN DƯỚI hàng rào
+    for (int y = bottom_y + 1; y < HEIGHT_CONSOLE; ++y) {
+        for (int x = 0; x < WIDTH_CONSOLE; ++x) game_map[y][x] = 1;
+    }
+
+    // 2.2.3. Lấp vùng BÊN PHẢI (2 hình chữ nhật)
+    // Vùng 1 (bên cạnh đoạn tường 1, từ y=2 đến y=13)
+    for (int y = top_y; y <= right_break_y; ++y) {
+        for (int x = right_wall_1_x + 1; x < WIDTH_CONSOLE; ++x) {
+            game_map[y][x] = 1;
         }
+    }
+    // Vùng 2 (bên cạnh đoạn tường 2, từ y=14 đến y=19)
+    for (int y = right_break_y + 1; y <= bottom_y; ++y) {
+        for (int x = right_wall_2_x + 1; x < WIDTH_CONSOLE; ++x) {
+            game_map[y][x] = 1;
+        }
+    }
+    if (lv == 2)
+    {
+     //(6,8) -> (11,8); (17,8) -> (21,8); (12,14)->(17,14)
+        //Hàng rào trái trên: (6,8)->(11,8)
+        for (int x = 6; x <= 11; x++) {
+            game_map[8][x] = 1;
+        }
+        
+        //Hàng rào phải trên: (17,8)->(21,8)
+        for (int x = 17; x <= 21; x++) {
+            game_map[8][x] = 1;
+        }
+        
+        //Hàng rào giữa dưới: (12,14)->(17,14)
+        for (int x = 12; x <= 17; x++) {
+            game_map[14][x] = 1;
+        }
+    }
+    else if (lv == 3)
+    {
 
-        // Vẽ hàng rào trái (từ trên xuống dưới)
-        for (int y = top_y; y <= bottom_y; y++) {
-            game_map[y][left_x] = 1;
-        }
+    }
 
-        // Vẽ hàng rào dưới (từ trái qua phải, hết cỡ)
-        for (int x = left_x; x <= right_wall_2_x; x++) {
-            game_map[bottom_y][x] = 1;
-        }
-
-        // Vẽ hàng rào phải (phức tạp, 3 đoạn)
-        // Đoạn 1: Từ trên (y=2) xuống chỗ gãy (y=13)
-        for (int y = top_y; y <= right_break_y; y++) {
-            game_map[y][right_wall_1_x] = 1;
-        }
-        // Đoạn 2: Ngang (từ x=28 đến x=37) tại chỗ gãy (y=13)
-        for (int x = right_wall_1_x; x <= right_wall_2_x; x++) {
-            game_map[right_break_y][x] = 1;
-        }
-        // Đoạn 3: Từ chỗ gãy (y=13) xuống dưới (y=19)
-        for (int y = right_break_y; y <= bottom_y; y++) {
-            game_map[y][right_wall_2_x] = 1;
-        }
-
-        // === 2.2. "Lấp" các vùng BÊN NGOÀI hàng rào (Giải pháp của bạn) ===
-        // Đặt tất cả các ô bên ngoài khu vực chơi thành 1
-
-        // 2.2.1. Lấp vùng BÊN TRÊN hàng rào
-        for (int y = 0; y < top_y; ++y) {
-            for (int x = 0; x < WIDTH_CONSOLE; ++x) game_map[y][x] = 1;
-        }
-
-        // 2.2.2. Lấp vùng BÊN DƯỚI hàng rào
-        for (int y = bottom_y + 1; y < HEIGHT_CONSOLE; ++y) {
-            for (int x = 0; x < WIDTH_CONSOLE; ++x) game_map[y][x] = 1;
-        }
-
-        // 2.2.3. Lấp vùng BÊN PHẢI (2 hình chữ nhật)
-        // Vùng 1 (bên cạnh đoạn tường 1, từ y=2 đến y=13)
-        for (int y = top_y; y <= right_break_y; ++y) {
-            for (int x = right_wall_1_x + 1; x < WIDTH_CONSOLE; ++x) {
-                game_map[y][x] = 1;
-            }
-        }
-        // Vùng 2 (bên cạnh đoạn tường 2, từ y=14 đến y=19)
-        for (int y = right_break_y + 1; y <= bottom_y; ++y) {
-            for (int x = right_wall_2_x + 1; x < WIDTH_CONSOLE; ++x) {
-                game_map[y][x] = 1;
-            }
-        }
-
-        // (Không cần lấp bên trái vì left_x = 0 đã là tường)
-    
+        
     // else if (lv == 2) {
     //     // Xây tường cho level 2...
     // }
