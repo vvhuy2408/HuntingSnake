@@ -7,11 +7,16 @@
 
 // Include file này để kết nối Logic và View
 #include "HuntingSnake/globals.h" 
-
+#include "HuntingSnake/save_load.h"
 #include "Design/textureManager.hpp"
 #include "Design/effects.hpp"
 #include "Design/interface.hpp"
 #include "Design/screenState.hpp"
+
+// Biến global liên quan đến save/load
+std::vector<SaveFileInfo> saveFileInfos;
+std::vector<sf::Text> saveFileTexts;
+int selectedSlot = -1;
 
 int main()
 {
@@ -41,6 +46,7 @@ int main()
     Button howto_button = createButton("Design/Assets/button/howto.png", "Design/Assets/button/howto_press.png", 980, 369);
     Button about_button = createButton("Design/Assets/button/about.png", "Design/Assets/button/about_press.png", 980, 569);
 
+	// Save slots and rocks
     std::vector<Button> slots;
     float x_slot = 174, y_slot = 247;
     for (int i = 0; i < 6; i++)
@@ -82,7 +88,7 @@ int main()
     sf::Sprite enemy_spr;
     enemy_spr.setTexture(enemy_text);
 
-    // phần này t code một cái trước th
+	// Wall for round 2
     sf::Texture wall_text;
     if (!enemy_text.loadFromFile("Design/assets/wall.png")) {
         std::cout << "Wall: error loading file" << std::endl;
@@ -101,20 +107,26 @@ int main()
         backgroundMusic.play();
     }
 
-    bool isExit = false;
     bool soundOff = false;
+
+	bool isModalOpen = false; // flag kiểm tra có modal đang mở không
+    bool isExit = false;
+    bool isPause = false;
+
     bool isDelete = false;
     bool isSave = false;
+    bool isSaving = false; // đang xử lý save, tạm dừng game
+    bool isRename = false;
+    std::string renameOutput = "";
+
     bool isWin = false;
     bool isLose = false;
-    bool isPause = false;
 
     // Initialize the screen stack once
     std::stack<ScreenState> screenStack;
     screenStack.push(ScreenState::StartMenu);
 
     // Font
-    sf::Font font;
     if (!font.loadFromFile("Design/Assets/Font/ThaleahFat.ttf")) 
     {
         std::cout << "Error loading font!\n";
@@ -142,35 +154,40 @@ int main()
         float dt = gameClock.restart().asSeconds();
         timeAccumulator += dt;
 
+        // Cập nhật flag modal
+        isModalOpen = (isSaving || isRename || isDelete || isLose || isPause);
+
+		// Xử lý sự kiện cửa sổ
         sf::Event event;
         while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                isExit = true;
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-                isExit = !isExit;
-            if (event.type == sf::Event::KeyPressed)
-            {
-#ifdef _WIN32
-                if (event.key.control && event.key.code == sf::Keyboard::S)
-                    isSave = true;
-#elif __APPLE__
-                if (event.key.system && event.key.code == sf::Keyboard::S)
-                    isSave = true;
-#endif
+        {   
+            if (event.type == sf::Event::Closed) {
+                window.close();
+                return 0;
             }
 
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::P)
-                isPause = !isPause;
+            // === CHỈ XỬ LÝ EVENTS KHI KHÔNG CÓ MODAL ===
+            if (!isModalOpen) {
+                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+                    isExit = !isExit;
+                if (event.type == sf::Event::KeyPressed)
+                {
+                    if (event.key.code == sf::Keyboard::L)
+                        isSave = true;
+                }
 
-            // --- XỬ LÝ INPUT RẮN (Chỉ khi đang InGame và không pause) ---
-            if (!screenStack.empty() && screenStack.top() == ScreenState::InGame && !isPause) {
-                if (event.type == sf::Event::KeyPressed) {
-                    handleInput(event.key.code); // Hàm từ gameLogic.cpp
+                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::P)
+                    isPause = !isPause;
+
+                // XỬ LÝ INPUT RẮN
+                if (!screenStack.empty() && screenStack.top() == ScreenState::InGame && !isPause) {
+                    if (event.type == sf::Event::KeyPressed) {
+                        handleInput(event.key.code);
+                    }
                 }
             }
         }
-
+		// exit effect
         if (isExit)
         {
             window.clear();
@@ -185,6 +202,7 @@ int main()
         // =================== SWITCH BETWEEN SCREENS ===================
         switch (currentScreen)
         {
+			// =================== START MENU ===================
         case ScreenState::StartMenu:
             window.draw(start_game);
             updateButton(start_button, window);
@@ -193,7 +211,7 @@ int main()
             if (start_button.isClicked)
                 changeScreen(screenStack, ScreenState::MainMenu);
             break;
-
+			// =================== MAIN MENU ===================
         case ScreenState::MainMenu:
             window.draw(main_menu);
 
@@ -212,12 +230,15 @@ int main()
             updateButton(about_button, window);
             drawButton(window, about_button);
 
+			// NÚT BACK
             if (back_button.isClicked)
 				goBack(screenStack);
 
+			// NÚT HOW TO
             if (howto_button.isClicked)
                 changeScreen(screenStack, ScreenState::HowTo);
-                
+
+			// NÚT ABOUT
             if (about_button.isClicked)
                 changeScreen(screenStack, ScreenState::About);
             
@@ -226,11 +247,13 @@ int main()
                 startGame(); // Reset dữ liệu rắn trước khi vào
                 changeScreen(screenStack, ScreenState::InGame);
             }
-        
+
+			// NÚT LOAD GAME
             if (loadgame_button.isClicked)
                 changeScreen(screenStack, ScreenState::LoadGame);
             break;
 
+			// =================== IN GAME ===================
         case ScreenState::InGame:
         {
             // 1. Vẽ nền theo level
@@ -250,11 +273,11 @@ int main()
             drawButton(window, back_button);
 
             // 4. Nếu đang hiển thị Lose popup -> xử lý Lose (ưu tiên modal lose)
-            if (STATE == 0 && !isLose) {
+            if (STATE == 0 && !isLose && !isPause) {
                 isLose = true;
                 backgroundMusic.pause();
             }
-
+			// 5. Xử lý lose modal
             if (isLose) {
                 int action = loseEffect(window); // 0 = nothing, 1 = replay, 2 = menu
                 if (action == 1) {
@@ -282,12 +305,12 @@ int main()
                 break; // thoát case để đảm bảo không vào phần logic / pause nữa
             }
 
-            // 5. Xử lý Back button
+            // 6. Xử lý Back button
             if (back_button.isClicked) {
 				isPause = !isPause;
             }
 
-            // 6. Nếu đang Pause -> xử lý modal Pause, và sau khi resume reset clock & skip logic
+			// 7. Xử lý Pause modal
             if (isPause) {
                 PauseGame(window, isPause); // trong PauseGame bạn đã set STATE=1 khi resume
                 if (!isPause) {
@@ -300,9 +323,8 @@ int main()
                 break; // pause modal active: không chạy updateGameLogic trong cùng frame
             }
 
-            // 7. CHỈ khi không pause và không lose: cập nhật logic game theo timeAccumulator
-            // (đảm bảo timeAccumulator tính từ gameClock.restart() đã được reset khi resume)
-            if (timeAccumulator > 0.5f / (SPEED > 0 ? SPEED : 1)) {
+            // Chỉ update logic khi không pause
+            if (!isPause && !isLose && !isSaving && timeAccumulator > 0.5f / (SPEED > 0 ? SPEED : 1)) {
                 timeAccumulator = 0.f;
                 updateGameLogic();
             }
@@ -310,13 +332,35 @@ int main()
             // 8. UI phụ, save, win...
             window.draw(timeText);
 
-            if (isSave) SaveGame(window, isSave);
+			// Save game modal
+            if (isSave) {
+				isSaving = true;
+
+                backgroundMusic.pause();
+
+                // Call modal save (this will poll events and draw popup)
+                SaveGame(window, isSave);
+
+                // After SaveGame returns: user either saved or canceled
+                // If closed (isSave==false) resume game state
+                if (!isSave) {
+					isSaving = false;
+                    // reset timing so we don't immediately run many updates
+                    gameClock.restart();
+                    timeAccumulator = 0.f;
+                    backgroundMusic.play();
+                }
+
+                // Skip remaining InGame processing this frame (modal was shown)
+                window.display();
+                continue; // back to top of while(window.isOpen())
+            }
             if (isWin) changeScreen(screenStack, ScreenState::MainMenu);
 
             break;
         }
 
-
+		// =================== ABOUT US ===================
         case ScreenState::About:
             window.draw(about_us);
             updateButton(back_button, window);
@@ -326,48 +370,143 @@ int main()
                 goBack(screenStack);
             break;
 
+		// =================== LOAD GAME ===================
         case ScreenState::LoadGame:
-            window.draw(load_game);
+        {
+            static bool listLoaded = false;
+            if (!listLoaded) {
+                loadSaveFileList(saveFileInfos);
+                prepareSaveFileTexts(saveFileInfos, saveFileTexts, font);
+                listLoaded = true;
+            }
 
+            window.draw(load_game);
             updateButton(back_button, window);
             drawButton(window, back_button);
 
-            if (back_button.isClicked)
+            if (back_button.isClicked) {
                 goBack(screenStack);
+                listLoaded = false;
+            }
 
+            // Vẽ slots và text
             for (int i = 0; i < slots.size(); i++)
             {
                 updateButton(slots[i], window);
                 drawButton(window, slots[i]);
+
+                if (slots[i].isClicked && i < (int)saveFileInfos.size()) {
+                    selectedSlot = i;
+                    slots[i].isClicked = false;
+                }
+
+                // Hiển thị tên file trong slot
+                if (i < (int)saveFileTexts.size()) {
+                    saveFileTexts[i].setFillColor(
+                        selectedSlot == i ? sf::Color::Yellow : sf::Color::White
+                    );
+                    window.draw(saveFileTexts[i]);
+                }
             }
 
-            for (int i = 0; i < rocks.size(); i++)
-            {
+            // === HIỂN THỊ THÔNG TIN CHI TIẾT Ở BẢNG INFORMATION ===
+            if (selectedSlot >= 0 && selectedSlot < (int)saveFileInfos.size()) {
+                const SaveFileInfo& selected = saveFileInfos[selectedSlot];
+
+                // NAME
+                sf::Text nameText;
+                nameText.setFont(font);
+                nameText.setCharacterSize(22);
+                nameText.setFillColor(sf::Color::Black);
+                nameText.setPosition(800, 295);
+                nameText.setString(selected.displayName);
+                window.draw(nameText);
+
+                // SCORE
+                sf::Text scoreText;
+                scoreText.setFont(font);
+                scoreText.setCharacterSize(22);
+                scoreText.setFillColor(sf::Color::Black);
+                scoreText.setPosition(800, 340);
+                scoreText.setString(std::to_string(selected.score));
+                window.draw(scoreText);
+
+                // LEVEL
+                sf::Text levelText;
+                levelText.setFont(font);
+                levelText.setCharacterSize(22);
+                levelText.setFillColor(sf::Color::Black);
+                levelText.setPosition(800, 385);
+                levelText.setString(std::to_string(selected.level));
+                window.draw(levelText);
+            }
+
+            // Rocks
+            for (int i = 0; i < rocks.size(); i++) {
                 updateButton(rocks[i], window);
                 drawButton(window, rocks[i]);
             }
 
-            if (rocks[2].isClicked)
-            {
-                isDelete = true;
+            // Rock[0]: Rename
+            if (rocks[0].isClicked) {
+                if (selectedSlot >= 0 && selectedSlot < (int)saveFileInfos.size()) {
+                    isRename = true;
+                }
+                rocks[0].isClicked = false;
             }
 
-            if (rocks[1].isClicked)
-            {
-                changeScreen(screenStack, ScreenState::InGame); // xử lý logic ở đây nữa
+            // Rock[1]: Load game
+            if (rocks[1].isClicked) {
+                if (selectedSlot >= 0 && selectedSlot < (int)saveFileInfos.size()) {
+                    std::string filepath = "SaveFiles/" + saveFileInfos[selectedSlot].filename;
+                    if (LoadGameFromFile(filepath)) {
+                        changeScreen(screenStack, ScreenState::InGame);
+                        STATE = 1;
+                        listLoaded = false;
+                        selectedSlot = -1;
+                    }
+                }
+                rocks[1].isClicked = false;
             }
 
-            if (rocks[0].isClicked)
-            {
-                // xử lí logic ở đây
+            // Rock[2]: Delete
+            if (rocks[2].isClicked) {
+                if (selectedSlot >= 0) {
+                    isDelete = true;
+                }
+                rocks[2].isClicked = false;
             }
+			// Rename modal
+            if (isRename) {
+                RenameDialog(window, isRename, renameOutput);
 
-            if (isDelete)
-            {
+                if (!isRename && !renameOutput.empty()) {
+                    // User đã confirm rename
+                    if (renameSaveFile(selectedSlot, renameOutput, saveFileInfos)) {
+                        prepareSaveFileTexts(saveFileInfos, saveFileTexts, font);
+                        std::cout << "Renamed successfully!" << std::endl;
+                    }
+                    else {
+                        std::cout << "Rename failed (name conflict or error)" << std::endl;
+                    }
+                    renameOutput = "";
+                }
+
+                window.display();
+                continue;
+            }
+			// Delete modal
+            if (isDelete) {
                 deleteEffect(window, isDelete);
+                if (!isDelete && selectedSlot >= 0) {
+                    deleteSaveFile(selectedSlot, saveFileInfos);
+                    prepareSaveFileTexts(saveFileInfos, saveFileTexts, font);
+                    selectedSlot = -1;
+                }
             }
             break;
-
+        }
+		// =================== HOW TO PLAY ===================
         case ScreenState::HowTo:
             window.draw(how_to);
             updateButton(back_button, window);

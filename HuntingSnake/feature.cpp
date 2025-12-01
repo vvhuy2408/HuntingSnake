@@ -1,5 +1,6 @@
 ﻿#include "globals.h"
 #include "feature.h"
+#include <algorithm>
 
 // Hàm phụ trợ: Vẽ một ô vuông tại tọa độ logic (x, y)
 // Giúp code gọn hơn, không phải setPosition lặp lại nhiều lần
@@ -47,8 +48,9 @@ void renderGame(sf::RenderWindow& window, sf::Font& font) {
     barBackground.setOutlineColor(sf::Color::White);
     window.draw(barBackground);
     
-    // Vẽ thanh tiến độ (dựa trên SCORE, max = 30)
-    float progressPercent = std::min(SCORE / 30.0f, 1.0f); // Tỷ lệ 0.0 -> 1.0
+    // Vẽ thanh tiến độ (dựa trên SCORE, max = 30)p và s cùng trỏ vào một vùng nhớ động.
+
+    float progressPercent = (std::min)(LEVEL_PROGRESS / (float)LEVEL_TARGET, 1.0f); // Tỷ lệ 0.0 -> 1.0
     int fillWidth = static_cast<int>(barWidth * progressPercent);
     
     sf::RectangleShape barFill(sf::Vector2f(fillWidth, barHeight));

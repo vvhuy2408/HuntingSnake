@@ -86,7 +86,7 @@ void drawButton(sf::RenderWindow& window, Button& btn){
 }
 
 // function helps load interface to fix with the fixed screen 
-sf::Sprite loadInterface (const std::string& path, const std::string& filename, const sf::RenderWindow& window){
+sf::Sprite loadInterface(const std::string& path, const std::string& filename, const sf::RenderWindow& window){
     loadTexture(path, filename);
     sf::Sprite spr(textures[filename]);
     
