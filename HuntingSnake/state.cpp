@@ -10,8 +10,8 @@ int   SIZE_SNAKE = BASE_LENGTH;
 int   FOOD_INDEX = 0;
 int   WIDTH_CONSOLE = 38, HEIGHT_CONSOLE = 20;
 int   STATE = 0;
-char  MOVING = 'D';
-char  CHAR_LOCK = 'A';
+char  MOVING = 'A';
+char  CHAR_LOCK;
 
 int   SPEED = 3;
 
@@ -32,3 +32,6 @@ int   FOOD_VALUE[MAX_SIZE_FOOD] = { 2 };
 
 POINT WALLS[MAX_WALLS];
 int   WALL_COUNT = 0;
+
+sf::Font font;
+

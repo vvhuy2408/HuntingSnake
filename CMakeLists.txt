@@ -13,7 +13,8 @@ add_executable(HuntingSnake
             HuntingSnake/feature.cpp
             HuntingSnake/gameLogic.cpp
             HuntingSnake/state.cpp
-            HuntingSnake/globals.h)
+            HuntingSnake/globals.h
+            HuntingSnake/save_load.cpp)
 
 target_link_libraries(HuntingSnake PRIVATE sfml-system sfml-window sfml-graphics sfml-audio)
 target_include_directories(HuntingSnake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Design)

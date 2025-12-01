@@ -7,28 +7,38 @@
 #include "thuvien.h"
 #include "feature.h"
 
-//void gotoXY(int x, int y);
+// các hàm liên quan đến độ dài rắn
+void moveSnake(int dx, int dy);
+void growSnake();
+
+// các hàm kiểm tra va chạm
 bool isSnakeBody(int x, int y);
 int isWall(int x, int y);
 bool isGate(int x, int y);
+
+// các hàm liên quan đến level, tường, cổng, mồi
 void resetSnakePosition();
 int levelTargetPoints(int lv);
-
-void maybeOpenGate();
-void onEnterGate();
-
-void generateFood();
-void onAte();
-
 void loadLevel(int lv);
 void resetData();
 
-// ==== Prototypes (Khai báo hàm) ====
-// Logic (gameLogic.cpp)
+// các hàm liên quan đến cổng
+void maybeOpenGate();
+void onEnterGate();
+
+// các hàm liên quan đến mồi
+void generateFood();
+void onAte();
+
+// hàm chính khởi động game
 void startGame();
 void resetData();
 void updateGameLogic(); // Hàm quan trọng: cập nhật rắn mỗi frame
+
+// hàm xử lý input
 void handleInput(sf::Keyboard::Key key);
 
+// hàm xây tường
+void buildWalls(int lv);
 
 #endif

@@ -1,5 +1,5 @@
 ﻿#pragma once
-//#include <windows.h>
+#include <windows.h>
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <cmath>
@@ -58,3 +58,4 @@ extern int FOOD_VALUE[MAX_SIZE_FOOD];     // +2 / -2 / +6
 extern POINT WALLS[MAX_WALLS];
 extern int   WALL_COUNT;
 extern int   game_map[MAX_GRID_HEIGHT][MAX_GRID_WIDTH];
+extern sf::Font font;
