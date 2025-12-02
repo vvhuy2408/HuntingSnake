@@ -3,10 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <cmath>
-#include <algorithm> 
-#include "feature.h"
-#include "gameLogic.h"
-#include <vector>
+#include <algorithm>
 
 // ==== Cấu hình Đồ họa ====
 #define CELL_SIZE 32        // Kích thước 1 ô (pixel). 32x32 là đẹp cho màn 1280x720
@@ -84,13 +81,6 @@ extern std::vector<Enemy> enemies;
 extern std::vector<Bullet> bullets;
 extern sf::Sprite enemy_spr;
 
-// Khai báo hàm
-void spawnEnemy(EnemyType type);
-void clearEnemies();
-void updateEnemySystem();
-void renderEnemies(sf::RenderWindow& window, sf::Sprite& enemy_spr);
-void renderBullets(sf::RenderWindow& window);
-bool checkEnemyCollision();
 
 
 

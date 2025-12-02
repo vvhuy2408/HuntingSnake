@@ -1,5 +1,4 @@
-﻿#include "globals.h"
-#include "gameLogic.h"
+﻿#include "gameLogic.h"
 #include <cmath>
 #include <vector>  
 #include <algorithm> 
@@ -208,7 +207,7 @@ void loadLevel(int lv) {
 
     buildWalls(lv);
 
-        clearEnemies();
+    clearEnemies();
     
     if (lv == 3) {
         spawnEnemy(ENEMY_LEFT);   // 1 enemy bên trái
@@ -314,7 +313,7 @@ void startGame() {
 
 // Config
 const float SHOOT_INTERVAL = 2.0f;  // Bắn mỗi 2 giây
-const float ENEMY_SPEED = 1.0f;    // Multiplier tốc độ di chuyển enemy
+const float ENEMY_SPEED = 1.5f;    // Multiplier tốc độ di chuyển enemy
 const int BULLET_SPEED = 1;         // Số ô đạn di chuyển mỗi frame
 
 // ========== LOGIC ENEMY ==========
@@ -406,21 +405,56 @@ void updateEnemies(float dt) {
 void moveEnemies() {
     if (LEVEL < 3) return;
 
+    POINT head = snake[0]; // Lưu vị trí đầu rắn
+
     for (auto& enemy : enemies) {
         if (!enemy.active) continue;
+
+        // Kiểm tra va chạm TRƯỚC KHI di chuyển
+        if (enemy.pos.x == head.x && enemy.pos.y == head.y) {
+            STATE = 0;
+            return;
+        }
+
         moveEnemy(enemy);
+
+        // Kiểm tra va chạm SAU KHI di chuyển
+        if (enemy.pos.x == head.x && enemy.pos.y == head.y) {
+            STATE = 0;
+            return;
+        }
     }
 }
 
 // ========== HÀM LOGIC ĐẠN ==========
 
 void updateBullets() {
+    POINT head = snake[0]; // Lưu vị trí đầu rắn
+
     for (auto& bullet : bullets) {
         if (!bullet.active) continue;
+
+        // Kiểm tra va chạm TRƯỚC KHI di chuyển
+        if (SNAKE_VISIBLE[0] &&
+            bullet.pos.x == head.x &&
+            bullet.pos.y == head.y) {
+            STATE = 0;
+            bullet.active = false;
+            return;
+        }
 
         // Di chuyển đạn
         bullet.pos.x += bullet.dx * BULLET_SPEED;
         bullet.pos.y += bullet.dy * BULLET_SPEED;
+
+        // Kiểm tra va chạm Sau khi di chuyển
+        if (SNAKE_VISIBLE[0] &&
+            bullet.pos.x == head.x &&
+            bullet.pos.y == head.y) {
+            STATE = 0;
+            bullet.active = false;
+            return;
+        }
 
         // Kiểm tra đạn ra khỏi màn hình
         if (bullet.pos.x < 0 || bullet.pos.x >= WIDTH_CONSOLE ||
@@ -434,17 +468,6 @@ void updateBullets() {
             bullet.active = false;
             continue;
         }
-
-        // Kiểm tra đạn đụng rắn
-        for (int i = 0; i < SIZE_SNAKE; i++) {
-            if (SNAKE_VISIBLE[i] &&
-                snake[i].x == bullet.pos.x &&
-                snake[i].y == bullet.pos.y) {
-                STATE = 0; // Game Over
-                bullet.active = false;
-                return;
-            }
-        }
     }
 
     // Xóa đạn không active
@@ -456,6 +479,8 @@ void updateBullets() {
 }
 
 bool checkEnemyCollision() {
+    if (LEVEL < 3) return false;
+
     POINT head = snake[0];
 
     for (const auto& enemy : enemies) {

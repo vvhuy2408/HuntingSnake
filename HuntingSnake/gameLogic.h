@@ -41,4 +41,12 @@ void handleInput(sf::Keyboard::Key key);
 // hàm xây tường
 void buildWalls(int lv);
 
+// hàm liên quan đến enemy
+void spawnEnemy(EnemyType type);
+void clearEnemies();
+void updateEnemySystem();
+void renderEnemies(sf::RenderWindow& window, sf::Sprite& enemy_spr);
+void renderBullets(sf::RenderWindow& window);
+bool checkEnemyCollision();
+
 #endif

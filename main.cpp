@@ -12,6 +12,7 @@
 #include "Design/effects.hpp"
 #include "Design/interface.hpp"
 #include "Design/screenState.hpp"
+#include "HuntingSnake/feature.h"
 
 // Biến global liên quan đến save/load
 std::vector<SaveFileInfo> saveFileInfos;
