@@ -134,14 +134,14 @@ void SaveGame(sf::RenderWindow& window, bool& isSave)
     warnText.setFont(font);
     warnText.setCharacterSize(20);
     warnText.setFillColor(sf::Color::Red);
-    warnText.setPosition(460, 375);
+    warnText.setPosition(600, 345);
 
     sf::Text hintText;
     hintText.setFont(font);
     hintText.setCharacterSize(20);
     hintText.setFillColor(sf::Color::White);
     hintText.setPosition(460, 315);
-    hintText.setString("Input save name: ");
+    hintText.setString("Input save name (max 7 chars): ");
 
     // === MODAL LOOP: Chạy cho đến khi user confirm hoặc exit ===
     bool modalActive = true;
@@ -165,6 +165,7 @@ void SaveGame(sf::RenderWindow& window, bool& isSave)
                 }
                 else if (c == 13 || c == 10) {
                     // Enter key: trigger confirm
+                    // (sẽ xử lý ở phần confirm button bên dưới)
                 }
                 else if (c >= 32 && c <= 126) {
                     // Allow alnum and some symbols; limit size to 7 characters
@@ -185,24 +186,27 @@ void SaveGame(sf::RenderWindow& window, bool& isSave)
             }
         }
 
-    // Update UI buttons
-    updateButton(confirm_button, window);
-    updateButton(exit_button, window);
+        // Update UI buttons
+        updateButton(confirm_button, window);
+        updateButton(exit_button, window);
 
         // Vẽ lại toàn bộ modal
         window.clear();
         
+        // Vẽ lại background game (nếu cần) - hoặc để đen
+        // Có thể vẽ lại màn hình game phía sau làm nền mờ
+        
         window.draw(save);
         window.draw(inputBox);
 
-    nameText.setString(saveName.empty() ? "Empty" : saveName);
-    window.draw(nameText);
-    window.draw(hintText);
+        nameText.setString(saveName.empty() ? "" : saveName);
+        window.draw(nameText);
+        window.draw(hintText);
 
-    if (nameConflict) {
-        warnText.setString("Save name existed!");
-        window.draw(warnText);
-    }
+        if (nameConflict) {
+            warnText.setString("Name existed!");
+            window.draw(warnText);
+        }
 
         drawButton(window, confirm_button);
         drawButton(window, exit_button);
@@ -255,17 +259,22 @@ void SaveGame(sf::RenderWindow& window, bool& isSave)
     }
 }
 
+
 void RenameDialog(sf::RenderWindow& window, bool& isRename, std::string& outputName)
 {
-    // Assets UI (giống SaveGame)
+    using namespace std;
+    namespace fs = std::filesystem;
+    const string saveDir = "SaveFiles";
+
     loadTexture("Design/Assets/savegame.png", "rename-box");
     sf::Sprite renameBox = makeSprite("rename-box", 267, 170);
 
-    Button confirm_button = createButton("Design/Assets/button/confirm.png", "", 530, 427);
-    Button exit_button = createButton("Design/Assets/button/exit.png", "", 740, 427);
+    static Button confirm_button = createButton("Design/Assets/button/confirm.png", "", 530, 427);
+    static Button exit_button = createButton("Design/Assets/button/exit.png", "", 740, 427);
 
-    std::string newName = "";
+    string newName = "";
     bool nameConflict = false;
+    string warningMessage = ""; // dùng để hiển thị mọi cảnh báo
 
     // Input box visual
     sf::RectangleShape inputBox(sf::Vector2f(350, 40));
@@ -282,18 +291,21 @@ void RenameDialog(sf::RenderWindow& window, bool& isRename, std::string& outputN
 
     sf::Text warnText;
     warnText.setFont(font);
-    warnText.setCharacterSize(20);
+    warnText.setCharacterSize(18);
     warnText.setFillColor(sf::Color::Red);
-    warnText.setPosition(460, 375);
+    warnText.setPosition(600, 345);
 
     sf::Text hintText;
     hintText.setFont(font);
     hintText.setCharacterSize(20);
     hintText.setFillColor(sf::Color::White);
     hintText.setPosition(460, 315);
-    hintText.setString("Input new name: ");
+    hintText.setString("Input new name (max 7 chars): ");
 
-    // === MODAL LOOP: Chạy cho đến khi user confirm hoặc exit ===
+    if (!fs::exists(saveDir)) {
+        fs::create_directories(saveDir);
+    }
+
     bool modalActive = true;
     while (modalActive && window.isOpen())
     {
@@ -306,31 +318,49 @@ void RenameDialog(sf::RenderWindow& window, bool& isRename, std::string& outputN
                 outputName = "";
                 return;
             }
+
             if (event.type == sf::Event::TextEntered) {
                 unsigned int c = event.text.unicode;
                 if (c == 8) { // backspace
                     if (!newName.empty()) {
                         newName.pop_back();
-                        nameConflict = false;
                     }
+                    nameConflict = false;
+                    warningMessage.clear();
                 }
                 else if (c == 13 || c == 10) {
-                    // Enter key: trigger confirm
+                    // ignore, we'll handle confirm button
                 }
                 else if (c >= 32 && c <= 126) {
                     if (newName.size() < 7) {
                         char ch = static_cast<char>(c);
                         if (isalnum((unsigned char)ch) || ch == '_' || ch == '-' || ch == ' ') {
                             newName.push_back(ch);
-                            nameConflict = false;
                         }
                     }
+                    nameConflict = false;
+                    warningMessage.clear();
+                }
+
+                // After any change, check conflict immediately
+                if (!newName.empty()) {
+                    string candidate = newName;
+                    if (candidate.size() < 4 || candidate.substr(candidate.size() - 4) != ".txt")
+                        candidate += ".txt";
+                    fs::path p = fs::path(saveDir) / candidate;
+                    nameConflict = fs::exists(p);
+                    if (nameConflict) warningMessage = "Name already exists!";
+                    else warningMessage.clear();
+                }
+                else {
+                    nameConflict = false;
+                    // keep warningMessage as-is (so confirm can set "empty" message)
                 }
             }
-            // Escape to cancel
+
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 isRename = false;
-                outputName = "";
+                outputName.clear();
                 return;
             }
         }
@@ -339,45 +369,65 @@ void RenameDialog(sf::RenderWindow& window, bool& isRename, std::string& outputN
         updateButton(confirm_button, window);
         updateButton(exit_button, window);
 
-        // Vẽ lại toàn bộ modal
+        // Vẽ modal
         window.clear();
-
         window.draw(renameBox);
         window.draw(inputBox);
 
-        nameText.setString(newName.empty() ? "" : newName);
+        nameText.setString(newName);
         window.draw(nameText);
         window.draw(hintText);
 
-        if (nameConflict) {
-            warnText.setString("Name already exists!");
+        // Vẽ cảnh báo nếu có
+        if (!warningMessage.empty()) {
+            warnText.setString(warningMessage);
+            warnText.setFillColor(sf::Color::Red);
             window.draw(warnText);
         }
 
         drawButton(window, confirm_button);
         drawButton(window, exit_button);
-
         window.display();
 
         // Handle confirm
         if (confirm_button.isClicked) {
             confirm_button.isClicked = false;
 
-            if (!newName.empty()) {
-                outputName = newName;
-                isRename = false;
-                modalActive = false;
+            // Build candidate filename
+            string candidate = newName;
+            if (candidate.size() < 4 || candidate.substr(candidate.size() - 4) != ".txt")
+                candidate += ".txt";
+
+            if (newName.empty()) {
+                // show the proper message and keep modal open
+                warningMessage = "Name cannot be empty";
+                // don't block UI with sleep; just continue and let render show message
+                continue;
             }
+
+            fs::path p = fs::path(saveDir) / candidate;
+            if (fs::exists(p)) {
+                nameConflict = true;
+                warningMessage = "Name already exists!";
+                continue;
+            }
+
+            // OK: accept
+            outputName = newName; // note: no ".txt"; caller can append if needed
+            isRename = false;
+            modalActive = false;
+            break;
         }
 
         // Handle exit
         if (exit_button.isClicked) {
             exit_button.isClicked = false;
-            outputName = ""; // empty = canceled
+            outputName.clear(); // empty = canceled
             isRename = false;
             modalActive = false;
+            break;
         }
-    }
+    } // end modal
 }
 
 void PauseGame(sf::RenderWindow& window, bool& isPause)
