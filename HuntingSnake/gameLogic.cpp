@@ -200,6 +200,8 @@ void loadLevel(int lv) {
     LEVEL_TARGET = levelTargetPoints(lv);
     LEVEL_PROGRESS = 0;
 
+	MOVING = 'A';
+
     GATE_ACTIVE = 0;
     IS_PASSING_GATE = 0;
     resetSnakePosition();
