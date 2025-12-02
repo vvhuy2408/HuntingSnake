@@ -34,23 +34,23 @@ void SaveGameToFile(const std::string& filename)
 
     // Header: basic game state
     ofs << "LEVEL " << LEVEL << "\n";
-	ofs << "LEVEL_PROGRESS " << LEVEL_PROGRESS << "\n";
-	ofs << "LEVEL_TARGET " << LEVEL_TARGET << "\n";
+    ofs << "LEVEL_PROGRESS " << LEVEL_PROGRESS << "\n";
+    ofs << "LEVEL_TARGET " << LEVEL_TARGET << "\n";
     ofs << "SCORE " << SCORE << "\n";
     ofs << "SPEED " << SPEED << "\n";
     ofs << "SIZE_SNAKE " << SIZE_SNAKE << "\n";
     ofs << "STATE " << STATE << "\n";
     ofs << "MOVING " << MOVING << "\n";
-	ofs << "CHAR_LOCK " << CHAR_LOCK << "\n";
+    ofs << "CHAR_LOCK " << CHAR_LOCK << "\n";
     ofs << "WIDTH_CONSOLE " << WIDTH_CONSOLE << " HEIGHT_CONSOLE " << HEIGHT_CONSOLE << "\n";
 
-    // Snake positions (write exactly SIZE_SNAKE entries)
+    // Snake positions
     ofs << "SNAKE\n";
     for (int i = 0; i < SIZE_SNAKE; ++i) {
         ofs << snake[i].x << " " << snake[i].y << "\n";
     }
 
-    // SNAKE_VISIBLE array (write up to MAX snake length; but we'll write SIZE_SNAKE entries)
+    // SNAKE_VISIBLE array
     ofs << "SNAKE_VISIBLE\n";
     for (int i = 0; i < SIZE_SNAKE; ++i) {
         ofs << (SNAKE_VISIBLE[i] ? 1 : 0) << (i + 1 < SIZE_SNAKE ? " " : "\n");
@@ -70,9 +70,25 @@ void SaveGameToFile(const std::string& filename)
         ofs << GATE[i].x << " " << GATE[i].y << "\n";
     }
 
-    // Optionally save game_map? If your buildWalls can rebuild deterministically from LEVEL,
-    // you don't need to serialize game_map. If walls are dynamic, serialize them.
-    // For now we skip game_map and assume buildWalls(LEVEL) is deterministic on load.
+    // === THÊM PHẦN ENEMY ===
+    ofs << "ENEMY_COUNT " << enemies.size() << "\n";
+    ofs << "ENEMIES\n";
+    for (const auto& enemy : enemies) {
+        ofs << enemy.pos.x << " " << enemy.pos.y << " ";
+        ofs << (int)enemy.type << " ";
+        ofs << (enemy.active ? 1 : 0) << " ";
+        ofs << enemy.direction << " ";
+        ofs << enemy.shootTimer << "\n";
+    }
+
+    // === THÊM PHẦN BULLET ===
+    ofs << "BULLET_COUNT " << bullets.size() << "\n";
+    ofs << "BULLETS\n";
+    for (const auto& bullet : bullets) {
+        ofs << bullet.pos.x << " " << bullet.pos.y << " ";
+        ofs << bullet.dx << " " << bullet.dy << " ";
+        ofs << (bullet.active ? 1 : 0) << "\n";
+    }
 
     ofs.close();
     std::cout << "Game saved to " << filename << std::endl;
@@ -86,18 +102,29 @@ bool LoadGameFromFile(const std::string& filename)
         return false;
     }
 
+    // Xóa dữ liệu enemy/bullet cũ trước khi load
+    enemies.clear();
+    bullets.clear();
+
+    int enemyCount = 0;
+    int bulletCount = 0;
+
     std::string tag;
     while (ifs >> tag) {
         if (tag == "LEVEL") { ifs >> LEVEL; }
         else if (tag == "LEVEL_PROGRESS") { ifs >> LEVEL_PROGRESS; }
-		else if (tag == "LEVEL_TARGET") { ifs >> LEVEL_TARGET; }
+        else if (tag == "LEVEL_TARGET") { ifs >> LEVEL_TARGET; }
         else if (tag == "SCORE") { ifs >> SCORE; }
         else if (tag == "SPEED") { ifs >> SPEED; }
         else if (tag == "SIZE_SNAKE") { ifs >> SIZE_SNAKE; }
         else if (tag == "STATE") { ifs >> STATE; }
         else if (tag == "MOVING") { ifs >> MOVING; }
-		else if (tag == "CHAR_LOCK") { ifs >> CHAR_LOCK; }
-        else if (tag == "WIDTH_CONSOLE") { ifs >> WIDTH_CONSOLE; ifs >> tag; if (tag == "HEIGHT_CONSOLE") ifs >> HEIGHT_CONSOLE; else { /* unexpected */ } }
+        else if (tag == "CHAR_LOCK") { ifs >> CHAR_LOCK; }
+        else if (tag == "WIDTH_CONSOLE") {
+            ifs >> WIDTH_CONSOLE;
+            ifs >> tag;
+            if (tag == "HEIGHT_CONSOLE") ifs >> HEIGHT_CONSOLE;
+        }
         else if (tag == "SNAKE") {
             for (int i = 0; i < SIZE_SNAKE; ++i) {
                 ifs >> snake[i].x >> snake[i].y;
@@ -117,23 +144,67 @@ bool LoadGameFromFile(const std::string& filename)
         else if (tag == "FOOD_ACTIVE") {
             int v; ifs >> v; FOOD_ACTIVE = (v != 0);
         }
-        else if (tag == "GATE_ACTIVE") { int v; ifs >> v; GATE_ACTIVE = (v != 0); }
-        else if (tag == "GATE_SIZE") { ifs >> GATE_SIZE; }
-        else if (tag == "GATE_POS") { ifs >> GATE_POS.x >> GATE_POS.y; }
+        else if (tag == "GATE_ACTIVE") {
+            int v; ifs >> v; GATE_ACTIVE = (v != 0);
+        }
+        else if (tag == "GATE_SIZE") {
+            ifs >> GATE_SIZE;
+        }
+        else if (tag == "GATE_POS") {
+            ifs >> GATE_POS.x >> GATE_POS.y;
+        }
         else if (tag == "GATE") {
             for (int i = 0; i < GATE_SIZE; ++i) {
                 ifs >> GATE[i].x >> GATE[i].y;
             }
         }
+        // === THÊM PHẦN ĐỌC ENEMY ===
+        else if (tag == "ENEMY_COUNT") {
+            ifs >> enemyCount;
+        }
+        else if (tag == "ENEMIES") {
+            for (int i = 0; i < enemyCount; ++i) {
+                Enemy enemy;
+                int type, active;
+                ifs >> enemy.pos.x >> enemy.pos.y;
+                ifs >> type;
+                ifs >> active;
+                ifs >> enemy.direction;
+                ifs >> enemy.shootTimer;
+
+                enemy.type = (EnemyType)type;
+                enemy.active = (active != 0);
+
+                enemies.push_back(enemy);
+            }
+        }
+        // === THÊM PHẦN ĐỌC BULLET ===
+        else if (tag == "BULLET_COUNT") {
+            ifs >> bulletCount;
+        }
+        else if (tag == "BULLETS") {
+            for (int i = 0; i < bulletCount; ++i) {
+                Bullet bullet;
+                int active;
+                ifs >> bullet.pos.x >> bullet.pos.y;
+                ifs >> bullet.dx >> bullet.dy;
+                ifs >> active;
+
+                bullet.active = (active != 0);
+
+                bullets.push_back(bullet);
+            }
+        }
         else {
             // unknown token: skip line
-            std::string rest; std::getline(ifs, rest);
+            std::string rest;
+            std::getline(ifs, rest);
         }
     }
 
     ifs.close();
 
-    // After loading, rebuild walls for the loaded level (if buildWalls depends on LEVEL)
+    // After loading, rebuild walls for the loaded level
     buildWalls(LEVEL);
 
     // Ensure snake visible flags for indices beyond SIZE_SNAKE are false
@@ -141,8 +212,10 @@ bool LoadGameFromFile(const std::string& filename)
         SNAKE_VISIBLE[i] = false;
     }
 
-    // Ensure other invariants (bounds, etc.) if needed
     std::cout << "Game loaded from " << filename << std::endl;
+    std::cout << "Loaded " << enemies.size() << " enemies and "
+        << bullets.size() << " bullets" << std::endl;
+
     return true;
 }
 
