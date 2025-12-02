@@ -1,6 +1,8 @@
 ﻿#include "globals.h"
 #include "gameLogic.h"
 #include <cmath>
+#include <vector>  
+#include <algorithm> 
 
 int game_map[MAX_GRID_HEIGHT][MAX_GRID_WIDTH];
 // ================= CÁC HÀM HỖ TRỢ (HELPER FUNCTIONS) =================
@@ -205,6 +207,13 @@ void loadLevel(int lv) {
     generateFood();
 
     buildWalls(lv);
+
+        clearEnemies();
+    
+    if (lv == 3) {
+        spawnEnemy(ENEMY_LEFT);   // 1 enemy bên trái
+        spawnEnemy(ENEMY_BOTTOM); // 1 enemy bên dưới
+    }
 }
 
 void generateFood() {
@@ -303,9 +312,256 @@ void startGame() {
     resetData();
 }
 
+// Config
+const float SHOOT_INTERVAL = 2.0f;  // Bắn mỗi 2 giây
+const float ENEMY_SPEED = 1.0f;    // Multiplier tốc độ di chuyển enemy
+const int BULLET_SPEED = 1;         // Số ô đạn di chuyển mỗi frame
+
+// ========== LOGIC ENEMY ==========
+
+void spawnEnemy(EnemyType type) {
+    Enemy enemy;
+    enemy.type = type;
+    enemy.active = true;
+    enemy.direction = 1;
+    enemy.shootTimer = 0.0f;
+
+    if (type == ENEMY_LEFT) {
+        // Bắt đầu ở giữa tường trái
+        enemy.pos.x = 1; // Cách tường 1 ô (tường ở x=0)
+        enemy.pos.y = HEIGHT_CONSOLE / 2;
+    }
+    else { // ENEMY_BOTTOM
+        // Bắt đầu ở giữa tường dưới
+        enemy.pos.x = WIDTH_CONSOLE / 2;
+        enemy.pos.y = HEIGHT_CONSOLE - 2; // Cách tường 1 ô (tường ở y=19)
+    }
+
+    enemies.push_back(enemy);
+}
+
+void clearEnemies() {
+    enemies.clear();
+    bullets.clear();
+}
+
+void moveEnemy(Enemy& enemy) {
+    if (enemy.type == ENEMY_LEFT) {
+        // Di chuyển dọc (lên xuống)
+        enemy.pos.y += enemy.direction;
+
+        // Kiểm tra va chạm tường -> đổi hướng
+        if (enemy.pos.y <= 3 || enemy.pos.y >= HEIGHT_CONSOLE - 2) {
+            enemy.direction *= -1;
+            enemy.pos.y += enemy.direction; // Điều chỉnh lại vị trí
+        }
+    }
+    else { // ENEMY_BOTTOM
+        // Di chuyển ngang (trái phải)
+        enemy.pos.x += enemy.direction;
+
+        // Kiểm tra va chạm tường -> đổi hướng
+        if (enemy.pos.x <= 1 || enemy.pos.x >= WIDTH_CONSOLE - 2) {
+            enemy.direction *= -1;
+            enemy.pos.x += enemy.direction;
+        }
+    }
+}
+
+void shootBullet(const Enemy& enemy) {
+    Bullet bullet;
+    bullet.pos = enemy.pos;
+    bullet.active = true;
+
+    if (enemy.type == ENEMY_LEFT) {
+        // Bắn sang phải
+        bullet.dx = 1;
+        bullet.dy = 0;
+    }
+    else { // ENEMY_BOTTOM
+        // Bắn lên trên
+        bullet.dx = 0;
+        bullet.dy = -1;
+    }
+
+    bullets.push_back(bullet);
+}
+
+void updateEnemies(float dt) {
+    if (LEVEL < 3) return;
+
+    for (auto& enemy : enemies) {
+        if (!enemy.active) continue;
+
+        // Cập nhật timer bắn
+        enemy.shootTimer += dt;
+
+        if (enemy.shootTimer >= SHOOT_INTERVAL) {
+            shootBullet(enemy);
+            enemy.shootTimer = 0.0f;
+        }
+    }
+}
+
+void moveEnemies() {
+    if (LEVEL < 3) return;
+
+    for (auto& enemy : enemies) {
+        if (!enemy.active) continue;
+        moveEnemy(enemy);
+    }
+}
+
+// ========== HÀM LOGIC ĐẠN ==========
+
+void updateBullets() {
+    for (auto& bullet : bullets) {
+        if (!bullet.active) continue;
+
+        // Di chuyển đạn
+        bullet.pos.x += bullet.dx * BULLET_SPEED;
+        bullet.pos.y += bullet.dy * BULLET_SPEED;
+
+        // Kiểm tra đạn ra khỏi màn hình
+        if (bullet.pos.x < 0 || bullet.pos.x >= WIDTH_CONSOLE ||
+            bullet.pos.y < 0 || bullet.pos.y >= HEIGHT_CONSOLE) {
+            bullet.active = false;
+            continue;
+        }
+
+        // Kiểm tra đạn đụng tường
+        if (isWall(bullet.pos.x, bullet.pos.y)) {
+            bullet.active = false;
+            continue;
+        }
+
+        // Kiểm tra đạn đụng rắn
+        for (int i = 0; i < SIZE_SNAKE; i++) {
+            if (SNAKE_VISIBLE[i] &&
+                snake[i].x == bullet.pos.x &&
+                snake[i].y == bullet.pos.y) {
+                STATE = 0; // Game Over
+                bullet.active = false;
+                return;
+            }
+        }
+    }
+
+    // Xóa đạn không active
+    bullets.erase(
+        std::remove_if(bullets.begin(), bullets.end(),
+            [](const Bullet& b) { return !b.active; }),
+        bullets.end()
+    );
+}
+
+bool checkEnemyCollision() {
+    POINT head = snake[0];
+
+    for (const auto& enemy : enemies) {
+        if (!enemy.active) continue;
+
+        if (enemy.pos.x == head.x && enemy.pos.y == head.y) {
+            return true; // Va chạm -> Game Over
+        }
+    }
+    return false;
+}
+
+// ========== HÀM CHÍNH CẬP NHẬT ==========
+
+void updateEnemySystem() {
+    if (LEVEL < 3) return;
+
+    static sf::Clock enemyClock;
+    static float enemyAccumulated = 0.0f;
+
+    float dt = enemyClock.restart().asSeconds();
+    if (dt > 0.5f) dt = 0.5f;
+
+    enemyAccumulated += dt;
+
+    // Cập nhật timer bắn
+    updateEnemies(dt);
+
+    // Di chuyển enemy theo tốc độ rắn
+    float snakeInterval = 0.5f / (SPEED > 0 ? SPEED : 1);
+    float enemyInterval = snakeInterval * ENEMY_SPEED;
+
+    if (enemyAccumulated >= enemyInterval) {
+        enemyAccumulated -= enemyInterval;
+        moveEnemies();
+    }
+
+    // Cập nhật đạn (chạy mỗi frame)
+    updateBullets();
+
+    // Kiểm tra va chạm
+    if (checkEnemyCollision()) {
+        STATE = 0;
+    }
+}
+
+// ========== RENDER ENEMY & BULLETS ==========
+//hàm này được gọi bên feature nhé
+void renderEnemies(sf::RenderWindow& window, sf::Sprite& enemy_spr) {
+    for (const auto& enemy : enemies) {
+        if (!enemy.active) continue;
+
+        if (enemy_spr.getTexture()) {
+            sf::Sprite spr = enemy_spr;
+
+            // Scale đều
+            float scale = (float)CELL_SIZE / enemy_spr.getTexture()->getSize().x;
+
+            if (enemy.type == ENEMY_LEFT) {
+                // enemy trái: LẬT NGANG 180 độ (reflect horizontal)
+                spr.setScale(-scale, scale);  // Scale âm = lật ngang
+
+                // Khi lật, origin thay đổi nên phải điều chỉnh vị trí
+                spr.setPosition(
+                    BOARD_X + enemy.pos.x * CELL_SIZE + CELL_SIZE, 
+                    BOARD_Y + enemy.pos.y * CELL_SIZE
+                );
+            }
+            else { // ENEMY_BOTTOM
+                // enemy dưới: XOAY 90 độ THEO CHIỀU KIM ĐỒNG HỒ
+                spr.setRotation(90);  // Xoay 90 độ
+                spr.setScale(scale, scale);
+
+                // Sau khi xoay, phải điều chỉnh vị trí
+                spr.setPosition(
+                    BOARD_X + enemy.pos.x * CELL_SIZE + CELL_SIZE,
+                    BOARD_Y + enemy.pos.y * CELL_SIZE
+                );
+            }
+
+            window.draw(spr);
+        }
+    }
+}
+
+void renderBullets(sf::RenderWindow& window) {
+    for (const auto& bullet : bullets) {
+        if (!bullet.active) continue;
+
+        // Vẽ đạn bằng hình tròn đỏ
+        sf::CircleShape bulletShape(CELL_SIZE / 4.0f);
+        bulletShape.setFillColor(sf::Color::Red);
+        bulletShape.setPosition(
+            BOARD_X + bullet.pos.x * CELL_SIZE + CELL_SIZE / 4.0f,
+            BOARD_Y + bullet.pos.y * CELL_SIZE + CELL_SIZE / 4.0f
+        );
+
+        window.draw(bulletShape);
+    }
+}
+
 // ================= UPDATE LOGIC (THAY CHO threadFunc) =================
 void updateGameLogic() {
     if (STATE == 0) return;
+
+    updateEnemySystem();
 
     // 1. Xác định hướng di chuyển
     int dx = 0, dy = 0;

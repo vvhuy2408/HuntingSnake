@@ -34,4 +34,7 @@ POINT WALLS[MAX_WALLS];
 int   WALL_COUNT = 0;
 
 sf::Font font;
+sf::Sprite enemy_spr;
 
+std::vector<Enemy> enemies;
+std::vector<Bullet> bullets;

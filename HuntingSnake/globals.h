@@ -6,6 +6,7 @@
 #include <algorithm> 
 #include "feature.h"
 #include "gameLogic.h"
+#include <vector>
 
 // ==== Cấu hình Đồ họa ====
 #define CELL_SIZE 32        // Kích thước 1 ô (pixel). 32x32 là đẹp cho màn 1280x720
@@ -59,3 +60,37 @@ extern POINT WALLS[MAX_WALLS];
 extern int   WALL_COUNT;
 extern int   game_map[MAX_GRID_HEIGHT][MAX_GRID_WIDTH];
 extern sf::Font font;
+
+enum EnemyType {
+    ENEMY_LEFT = 0,
+    ENEMY_BOTTOM = 1
+};
+
+struct Enemy {
+    POINT pos;
+    EnemyType type;
+    bool active;
+    int direction;
+    float shootTimer;
+};
+
+struct Bullet {
+    POINT pos;
+    int dx, dy;
+    bool active;
+};
+
+extern std::vector<Enemy> enemies;
+extern std::vector<Bullet> bullets;
+extern sf::Sprite enemy_spr;
+
+// Khai báo hàm
+void spawnEnemy(EnemyType type);
+void clearEnemies();
+void updateEnemySystem();
+void renderEnemies(sf::RenderWindow& window, sf::Sprite& enemy_spr);
+void renderBullets(sf::RenderWindow& window);
+bool checkEnemyCollision();
+
+
+
