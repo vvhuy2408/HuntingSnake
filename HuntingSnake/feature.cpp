@@ -99,6 +99,12 @@ void renderGame(sf::RenderWindow& window, sf::Font& font) {
         window.draw(foodShape);
     }
     
+    // *** THÊM: VẼ ENEMY VÀ ĐẠN ***
+    if (LEVEL >= 3) {
+        renderEnemies(window, enemy_spr);
+        renderBullets(window);
+    }
+
     // 4. VẼ RẮN (SNAKE)
     std::string mssv_digits = "2412711124127406241275102412752224127550";
 

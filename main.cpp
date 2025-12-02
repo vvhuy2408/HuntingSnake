@@ -85,12 +85,12 @@ int main()
     if (!enemy_text.loadFromFile("Design/assets/enemy.png")) {
         std::cout << "Enemy: error loading file" << std::endl;
     }
-    sf::Sprite enemy_spr;
+
     enemy_spr.setTexture(enemy_text);
 
 	// Wall for round 2
     sf::Texture wall_text;
-    if (!enemy_text.loadFromFile("Design/assets/wall.png")) {
+    if (!wall_text.loadFromFile("Design/assets/wall.png")) {
         std::cout << "Wall: error loading file" << std::endl;
     }
     sf::Sprite wall_spr;
