@@ -6,7 +6,7 @@
 int game_map[MAX_GRID_HEIGHT][MAX_GRID_WIDTH];
 // ================= CÁC HÀM HỖ TRỢ (HELPER FUNCTIONS) =================
 
-// Hàm di chuyển mảng rắn (Thay đổi: snake[0] là đầu)
+// Hàm di chuyển mảng rắn (snake[0] là đầu)
 void moveSnake(int dx, int dy) {
     // Dời thân: Đốt sau = Đốt trước (Dời từ đuôi lên đầu)
     for (int i = SIZE_SNAKE - 1; i > 0; i--) {
@@ -17,7 +17,7 @@ void moveSnake(int dx, int dy) {
     snake[0].y += dy;
 }
 
-// Hàm tăng kích thước rắn
+// Hàm tăng kích thước rắnX
 void growSnake() {
     // Tăng kích thước trước
     SIZE_SNAKE++;
@@ -269,7 +269,7 @@ void onAte() {
     if (LEVEL_PROGRESS >= LEVEL_TARGET) {
         LEVEL_PROGRESS = LEVEL_TARGET; // clamp
         if (!GATE_ACTIVE) {
-            maybeOpenGate(); // maybeOpenGate() đã xóa food và đặt FOOD_ACTIVE=false
+            maybeOpenGate(); 
         }
     }
     else {
@@ -628,19 +628,15 @@ void updateGameLogic() {
 
     // --- KIỂM TRA VA CHẠM (CHẾT) ---
     if (IS_PASSING_GATE == 0) {
-        // 1. Đụng tường biên
-        /*if (newHead.x < 0 || newHead.x >= WIDTH_CONSOLE ||
-            newHead.y < 0 || newHead.y >= HEIGHT_CONSOLE) {
-            STATE = 0; return;
-        }*/
-        // 2. Đụng thân
+        // Đụng thân
         if (isSnakeBody(newHead.x, newHead.y)) {
             STATE = 0; return;
         }
-        // 3. Đụng tường chướng ngại vật
+        // Đụng tường chướng ngại vật
         if (isWall(newHead.x, newHead.y)) {
             STATE = 0; return;
         }
+		// Đụng cổng
         if (isGate(newHead.x, newHead.y)) {
             STATE = 0; return;
         }
@@ -659,9 +655,13 @@ void updateGameLogic() {
 
 void handleInput(sf::Keyboard::Key key) {
     if (STATE == 1) {
-        if (key == sf::Keyboard::A && CHAR_LOCK != 'A') { MOVING = 'A'; CHAR_LOCK = 'D'; }
-        else if (key == sf::Keyboard::D && CHAR_LOCK != 'D') { MOVING = 'D'; CHAR_LOCK = 'A'; }
-        else if (key == sf::Keyboard::W && CHAR_LOCK != 'W') { MOVING = 'W'; CHAR_LOCK = 'S'; }
-        else if (key == sf::Keyboard::S && CHAR_LOCK != 'S') { MOVING = 'S'; CHAR_LOCK = 'W'; }
+        if (key == sf::Keyboard::A && CHAR_LOCK != 'A') 
+            { MOVING = 'A'; CHAR_LOCK = 'D'; }
+        else if (key == sf::Keyboard::D && CHAR_LOCK != 'D') 
+            { MOVING = 'D'; CHAR_LOCK = 'A'; }
+        else if (key == sf::Keyboard::W && CHAR_LOCK != 'W') 
+            { MOVING = 'W'; CHAR_LOCK = 'S'; }
+        else if (key == sf::Keyboard::S && CHAR_LOCK != 'S') 
+            { MOVING = 'S'; CHAR_LOCK = 'W'; }
     }
 }

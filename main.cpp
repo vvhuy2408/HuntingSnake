@@ -542,33 +542,6 @@ int main()
             }
         }
 
-        // --- BẮT ĐẦU CODE DEBUG TỌA ĐỘ (Để lấy tọa độ vẽ map đè lên background: buildWalls() ---
-
-        // 1. Lấy vị trí pixel của chuột
-        sf::Vector2i mousePixelPos = sf::Mouse::getPosition(window);
-
-        // 2. Chuyển đổi sang tọa độ grid (dùng công thức như Cách 1)
-        int gridX = (mousePixelPos.x - BOARD_X) / CELL_SIZE;
-        int gridY = (mousePixelPos.y - BOARD_Y) / CELL_SIZE;
-
-        // 3. Hiển thị lên màn hình
-        sf::Text debugText;
-        debugText.setFont(font);
-        debugText.setCharacterSize(20); // Tăng size chữ lên chút cho dễ đọc
-        debugText.setFillColor(sf::Color::Yellow); // Đổi sang màu vàng cho nổi
-        debugText.setOutlineThickness(2); // Viền đen cho chữ đỡ chìm
-        debugText.setOutlineColor(sf::Color::Black);
-
-        std::string coords = "(" + std::to_string(gridX) + ", " + std::to_string(gridY) + ")";
-        debugText.setString(coords);
-
-        // 4. Đặt vị trí: Dời sang phải 15px và xuống dưới 15px so với chuột
-        debugText.setPosition(mousePixelPos.x + 15, mousePixelPos.y + 15);
-
-        window.draw(debugText);
-
-        // --- KẾT THÚC CODE DEBUG ---
-
         window.display();
     }
 

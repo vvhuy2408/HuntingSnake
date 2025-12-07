@@ -30,9 +30,6 @@ bool FOOD_ACTIVE = false;
 int   FOOD_TYPE[MAX_SIZE_FOOD] = { FOOD_NORMAL };
 int   FOOD_VALUE[MAX_SIZE_FOOD] = { 2 };
 
-POINT WALLS[MAX_WALLS];
-int   WALL_COUNT = 0;
-
 sf::Font font;
 sf::Sprite enemy_spr;
 
